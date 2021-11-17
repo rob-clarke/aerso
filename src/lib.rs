@@ -6,7 +6,6 @@ mod aero;
 mod effectors;
 
 pub use types::{
-    Real,
     Vector3,Matrix3,UnitQuaternion,
     StateVector,
     Frame,

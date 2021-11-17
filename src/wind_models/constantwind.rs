@@ -1,23 +1,24 @@
-use crate::{Real,Vector3,WindModel};
+use crate::{Vector3,WindModel};
+use crate::types::Real;
 
-pub struct ConstantWind {
-    wind: Vector3,
+pub struct ConstantWind<T: Real> {
+    wind: Vector3<T>,
 }
 
-impl ConstantWind {
-    pub fn new(wind: Vector3) -> ConstantWind {
+impl<T: Real> ConstantWind<T> {
+    pub fn new(wind: Vector3<T>) -> Self {
         ConstantWind {
             wind,
         }
     }
 }
 
-impl WindModel for ConstantWind {
-    fn get_wind(&self, _position: &Vector3) -> Vector3 {
+impl<T: Real> WindModel<T> for ConstantWind<T> {
+    fn get_wind(&self, _position: &Vector3<T>) -> Vector3<T> {
         self.wind
     }
     
-    fn step(&mut self, _delta_t: Real) {}
+    fn step(&mut self, _delta_t: T) {}
 }
 
 #[test]

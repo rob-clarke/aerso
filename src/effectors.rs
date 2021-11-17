@@ -1,24 +1,25 @@
-use crate::{Real,Vector3,Force,Torque,AeroBody,Frame,AirState,WindModel,DensityModel};
+use crate::{Vector3,Force,Torque,AeroBody,Frame,AirState,WindModel,DensityModel};
+use crate::types::Real;
 
 /// Interface to an aerodynamic effect
-pub trait AeroEffect<T: Copy> {
-    fn get_effect(&self, airstate: AirState, rates: Vector3, inputstate: T) -> (Force,Torque);
+pub trait AeroEffect<T: Real,I: Copy> {
+    fn get_effect(&self, airstate: AirState<T>, rates: Vector3<T>, inputstate: I) -> (Force<T>,Torque<T>);
 }
 
-pub struct AffectedBody<T: Copy, W: WindModel, D: DensityModel> {
-    pub body: AeroBody<W,D>,
-    pub effectors: Vec<Box<dyn AeroEffect<T>>>,
+pub struct AffectedBody<T: Real, W: WindModel<T>, D: DensityModel<T>, I: Copy> {
+    pub body: AeroBody<T,W,D>,
+    pub effectors: Vec<Box<dyn AeroEffect<T,I>>>,
 }
 
-impl<T: Copy,W: WindModel, D: DensityModel> AffectedBody<T,W,D> {
+impl<T: Real, W: WindModel<T>, D: DensityModel<T>, I: Copy> AffectedBody<T,W,D,I> {
     
-   pub fn step(&mut self, delta_t: Real, inputstate: T) {
+   pub fn step(&mut self, delta_t: T, inputstate: I) {
        let airstate = self.body.get_airstate();
        let rates = self.body.rates();
        let ft_pairs = self.effectors.iter().map(|e| e.get_effect(airstate,rates,inputstate) );
        
-       let mut forces = Vec::<Force>::with_capacity(self.effectors.len());
-       let mut torques = Vec::<Torque>::with_capacity(self.effectors.len());
+       let mut forces = Vec::<Force<T>>::with_capacity(self.effectors.len());
+       let mut torques = Vec::<Torque<T>>::with_capacity(self.effectors.len());
        for (f,t) in ft_pairs {
            forces.push(f);
            torques.push(t);
@@ -30,24 +31,24 @@ impl<T: Copy,W: WindModel, D: DensityModel> AffectedBody<T,W,D> {
 }
 
 use crate::{StateView,StateVector,UnitQuaternion};
-impl<T: Copy, W: WindModel, D: DensityModel> StateView for AffectedBody<T,W,D> {
-    fn position(&self) -> Vector3 {
+impl<T: Real, W: WindModel<T>, D: DensityModel<T>, I: Copy> StateView<T> for AffectedBody<T,W,D,I> {
+    fn position(&self) -> Vector3<T> {
         self.body.position()
     }
     
-    fn velocity_in_frame(&self, frame: Frame) -> Vector3 {
+    fn velocity_in_frame(&self, frame: Frame) -> Vector3<T> {
         self.body.velocity_in_frame(frame)
     }
     
-    fn attitude(&self) -> UnitQuaternion {
+    fn attitude(&self) -> UnitQuaternion<T> {
         self.body.attitude()
         }
     
-    fn rates_in_frame(&self, frame: Frame) -> Vector3 {
+    fn rates_in_frame(&self, frame: Frame) -> Vector3<T> {
         self.body.rates_in_frame(frame)
     }
     
-    fn statevector(&self) -> StateVector {
+    fn statevector(&self) -> StateVector<T> {
         self.body.statevector()
     }
 }

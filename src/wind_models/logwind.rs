@@ -1,14 +1,17 @@
-use crate::{Real,Vector3,WindModel};
+use crate::{Vector3,WindModel};
+use crate::types::Real;
 
-pub struct LogWind {
-    d: Real,
-    z0: Real,
-    u_star: Real,
-    bearing: Real,
+pub struct LogWind<T: Real> {
+    d: T,
+    z0: T,
+    u_star: T,
+    bearing: T,
 }
 
-impl LogWind {
-    pub fn new(d: Real, z0: Real, u_star: Real, bearing: Real) -> LogWind {
+impl<T: Real> LogWind<T> {
+    const K: T = T::from(0.41);
+    
+    pub fn new(d: T, z0: T, u_star: T, bearing: T) -> Self {
         LogWind {
             d,
             z0,
@@ -18,18 +21,17 @@ impl LogWind {
     }
 }
 
-impl WindModel for LogWind {
-    fn get_wind(&self, position: &Vector3) -> Vector3 {
-        const K: Real = 0.41;
-        let velocity = self.u_star/K * ((position.z - self.d) / self.z0).ln();
+impl<T: Real> WindModel<T> for LogWind<T> {
+    fn get_wind(&self, position: &Vector3<T>) -> Vector3<T> {
+        let velocity = self.u_star/Self::K * ((position.z - self.d) / self.z0).ln();
         let bearing_rad = self.bearing.to_radians();
         Vector3::new(
             velocity * bearing_rad.cos(),
             velocity * bearing_rad.sin(),
-            0.0)
+            T::zero())
     }
     
-    fn step(&mut self, _delta_t: Real) {}
+    fn step(&mut self, _delta_t: T) {}
 }
 
 #[test]
