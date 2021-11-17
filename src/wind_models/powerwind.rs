@@ -1,15 +1,15 @@
 use crate::{Vector3,WindModel};
-use crate::types::Real;
+use crate::types::Float;
 
-pub struct PowerWind<T: Real> {
+pub struct PowerWind<T: Float> {
     u_r: T,
     z_r: T,
     alpha: T,
     bearing: T,
 }
 
-impl<T: Real> PowerWind<T> {
-    const ALPHA_TYPICAL: T = T::from(0.143);
+impl<T: Float> PowerWind<T> {
+    const ALPHA_TYPICAL: T = T::from(0.143).unwrap();
     
     pub fn new_with_alpha(u_r: T, z_r: T, bearing: T, alpha: T) -> Self {
         PowerWind { u_r, z_r, bearing, alpha }
@@ -20,13 +20,13 @@ impl<T: Real> PowerWind<T> {
     }
 }
 
-impl<T: Real> WindModel<T> for PowerWind<T> {
+impl<T: Float> WindModel<T> for PowerWind<T> {
     fn get_wind(&self, position: &Vector3<T>) -> Vector3<T> {
-        let velocity = self.u_r * (position.z / self.z_r).powf(self.alpha);
+        let velocity = self.u_r * <T as num_traits::Float>::powf(position.z / self.z_r,self.alpha);
         let bearing_rad = self.bearing.to_radians();
         Vector3::new(
-            velocity * bearing_rad.cos(),
-            velocity * bearing_rad.sin(),
+            velocity * <T as num_traits::Float>::cos(bearing_rad),
+            velocity * <T as num_traits::Float>::sin(bearing_rad),
             T::zero())
     }
     

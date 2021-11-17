@@ -1,15 +1,15 @@
 use crate::{Vector3,WindModel};
-use crate::types::Real;
+use crate::types::Float;
 
-pub struct LogWind<T: Real> {
+pub struct LogWind<T: Float> {
     d: T,
     z0: T,
     u_star: T,
     bearing: T,
 }
 
-impl<T: Real> LogWind<T> {
-    const K: T = T::from(0.41);
+impl<T: Float> LogWind<T> {
+    const K: T = T::from(0.41).unwrap();
     
     pub fn new(d: T, z0: T, u_star: T, bearing: T) -> Self {
         LogWind {
@@ -21,13 +21,13 @@ impl<T: Real> LogWind<T> {
     }
 }
 
-impl<T: Real> WindModel<T> for LogWind<T> {
+impl<T: Float> WindModel<T> for LogWind<T> {
     fn get_wind(&self, position: &Vector3<T>) -> Vector3<T> {
-        let velocity = self.u_star/Self::K * ((position.z - self.d) / self.z0).ln();
+        let velocity = self.u_star/Self::K * <T as num_traits::Float>::ln((position.z - self.d) / self.z0);
         let bearing_rad = self.bearing.to_radians();
         Vector3::new(
-            velocity * bearing_rad.cos(),
-            velocity * bearing_rad.sin(),
+            velocity * <T as num_traits::Float>::cos(bearing_rad),
+            velocity * <T as num_traits::Float>::sin(bearing_rad),
             T::zero())
     }
     

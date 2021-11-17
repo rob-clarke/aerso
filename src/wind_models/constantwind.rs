@@ -1,11 +1,11 @@
 use crate::{Vector3,WindModel};
-use crate::types::Real;
+use crate::types::Float;
 
-pub struct ConstantWind<T: Real> {
+pub struct ConstantWind<T: Float> {
     wind: Vector3<T>,
 }
 
-impl<T: Real> ConstantWind<T> {
+impl<T: Float> ConstantWind<T> {
     pub fn new(wind: Vector3<T>) -> Self {
         ConstantWind {
             wind,
@@ -13,7 +13,7 @@ impl<T: Real> ConstantWind<T> {
     }
 }
 
-impl<T: Real> WindModel<T> for ConstantWind<T> {
+impl<T: Float> WindModel<T> for ConstantWind<T> {
     fn get_wind(&self, _position: &Vector3<T>) -> Vector3<T> {
         self.wind
     }

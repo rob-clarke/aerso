@@ -1,26 +1,14 @@
 extern crate nalgebra as na;
 
-// #[cfg(not(feature="single-precision"))]
-// pub type Real = f64;
+pub type Vector3<T: Float> = na::Vector3<T>;
+pub type Matrix3<T: Float> = na::Matrix3<T>;
+pub type UnitQuaternion<T: Float> = na::UnitQuaternion<T>;
 
-// #[cfg(feature="single-precision")]
-// pub type Real = f32;
+pub type StateVector<T: Float> = na::SVector<T,13>;
 
-pub trait Real: na::RealField + Copy + Clone + From<f64> {
-    fn to_radians(self) -> Self;
-}
-impl Real for f64 {
-    fn to_radians(self) -> Self { self.to_radians() }
-}
-// impl Real for f32 {
-//     fn to_radians(self) -> Self { self.to_radians() }
-// }
-
-pub type Vector3<T: Real> = na::Vector3<T>;
-pub type Matrix3<T: Real> = na::Matrix3<T>;
-pub type UnitQuaternion<T: Real> = na::UnitQuaternion<T>;
-
-pub type StateVector<T: Real> = na::SVector<T,13>;
+pub trait Float: num_traits::Float + num_traits::FromPrimitive + na::RealField {}
+impl Float for f32 {}
+impl Float for f64 {}
 
 /// Represent reference frame of quantities
 #[derive(Copy,Clone)]
@@ -31,12 +19,12 @@ pub enum Frame {
 
 /// Represent a force in either body or world reference frame
 #[derive(Copy,Clone)]
-pub struct Force<T: Real> {
+pub struct Force<T: Float> {
     pub force: Vector3<T>,
     pub frame: Frame,
 }
 
-impl<T: Real> Force<T> {
+impl<T: Float> Force<T> {
     fn new(x: T, y: T, z: T, frame: Frame) -> Self {
         Force {
             force: Vector3::new(x,y,z),
@@ -57,12 +45,12 @@ impl<T: Real> Force<T> {
 
 /// Represent a torque in either body or world reference frame
 #[derive(Copy,Clone)]
-pub struct Torque<T: Real> {
+pub struct Torque<T: Float> {
     pub torque: Vector3<T>,
     pub frame: Frame,
 }
 
-impl<T: Real> Torque<T> {
+impl<T: Float> Torque<T> {
     fn new(x: T, y: T, z: T, frame: Frame) -> Self {
         Torque {
             torque: Vector3::new(x,y,z),
@@ -82,7 +70,7 @@ impl<T: Real> Torque<T> {
 }
 
 /// Trait to allow more meaningful access to the state vector
-pub trait StateView<T: Real> {
+pub trait StateView<T: Float> {
     
     /// Return the world-frame position
     fn position(&self) -> Vector3<T>;
@@ -111,7 +99,7 @@ pub trait StateView<T: Real> {
     
 }
 
-impl<T: Real> StateView<T> for StateVector<T> {
+impl<T: Float> StateView<T> for StateVector<T> {
     fn position(&self) -> Vector3<T> {
         self.fixed_rows::<3>(0).into()
     }

@@ -1,11 +1,11 @@
-use aerso::{AeroBody,Real,Vector3,Matrix3,UnitQuaternion,Body,Force,StateVector,StateView};
+use aerso::{AeroBody,Float,Vector3,Matrix3,UnitQuaternion,Body,Force,StateVector,StateView};
 
 use aerso::wind_models::ConstantWind;
 
 use approx::assert_relative_eq;
 
 struct SimResult {
-    time: Real,
+    time: Float,
     statevector: StateVector,
 }
 

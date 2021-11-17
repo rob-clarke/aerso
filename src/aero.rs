@@ -1,8 +1,8 @@
 use crate::{Vector3,Body,Force,Torque,StateView,Frame,UnitQuaternion};
-use crate::types::Real;
+use crate::types::Float;
 
 /// Trait for general wind model
-pub trait WindModel<T: Real> {
+pub trait WindModel<T: Float> {
     
     /// Return the current wind at the specified position in world frame coordinates
     /// Both vectors should be in North-East-Down frame
@@ -14,7 +14,7 @@ pub trait WindModel<T: Real> {
 }
 
 /// Trait for general density model
-pub trait DensityModel<T: Real> {
+pub trait DensityModel<T: Float> {
 
     /// Return the current density at the specified position (kg.m^-3)
     fn get_density(&self, position: &Vector3<T>) -> T;
@@ -25,15 +25,15 @@ pub struct StandardDensity;
 impl StandardDensity {
     const ISA_STANDARD_DENSITY: f64 = 1.225;
 }
-impl<T: Real> DensityModel<T> for StandardDensity {
+impl<T: Float> DensityModel<T> for StandardDensity {
     fn get_density(&self, _position: &Vector3<T>) -> T {
-        return T::from(Self::ISA_STANDARD_DENSITY);
+        return T::from(Self::ISA_STANDARD_DENSITY).unwrap();
     }
 }
 
 /// Represent generic air state
 #[derive(Clone,Copy)]
-pub struct AirState<T: Real> {
+pub struct AirState<T: Float> {
     /// Angle of attack (radians)
     pub alpha: T,
     /// Angle of sideslip (radians)
@@ -45,7 +45,7 @@ pub struct AirState<T: Real> {
 }
 
 /// Represent a body with aerodynamics helpers
-pub struct AeroBody<T: Real, W: WindModel<T>, D: DensityModel<T>> {
+pub struct AeroBody<T: Float, W: WindModel<T>, D: DensityModel<T>> {
     /// The underlying rigid body
     pub body: Body<T>,
     /// Optional wind model
@@ -55,7 +55,7 @@ pub struct AeroBody<T: Real, W: WindModel<T>, D: DensityModel<T>> {
 }
 
 use crate::wind_models::ConstantWind;
-impl<T: Real> AeroBody<T,ConstantWind<T>,StandardDensity> {
+impl<T: Float> AeroBody<T,ConstantWind<T>,StandardDensity> {
     /// Create an AeroBody with no wind and constant ISA standard sea-level density
     pub fn new(body: Body<T>) -> Self {
         let wind_model = crate::wind_models::ConstantWind::<T>::new(Vector3::new(T::zero(),T::zero(),T::zero()));
@@ -63,7 +63,7 @@ impl<T: Real> AeroBody<T,ConstantWind<T>,StandardDensity> {
     }
 }
 
-impl<T: Real, W: WindModel<T>> AeroBody<T,W,StandardDensity> {
+impl<T: Float, W: WindModel<T>> AeroBody<T,W,StandardDensity> {
     /// Create an AeroBody with a WindModel and constant ISA standard sea-level density
     pub fn with_wind_model(body: Body<T>, wind_model: W) -> Self {
         let density_model = StandardDensity{};
@@ -71,7 +71,7 @@ impl<T: Real, W: WindModel<T>> AeroBody<T,W,StandardDensity> {
     }
 }
 
-impl<T: Real, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
+impl<T: Float, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
     /// Create an AeroBody with a WindModel and a DensityModel
     pub fn with_density_model(body: Body<T>, wind_model: W, density_model: D) -> Self {
         Self {
@@ -93,17 +93,17 @@ impl<T: Real, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
         let v = current_body_wind[1];
         let w = current_body_wind[2];
         
-        let u_sqd = u.powi(2);
-        let v_sqd = v.powi(2);
-        let w_sqd = w.powi(2);
+        let u_sqd = <T as num_traits::Float>::powi(u,2);
+        let v_sqd = <T as num_traits::Float>::powi(v,2);
+        let w_sqd = <T as num_traits::Float>::powi(w,2);
         
-        let airspeed = ( u_sqd + v_sqd + w_sqd ).sqrt();
+        let airspeed = <T as num_traits::Float>::sqrt( u_sqd + v_sqd + w_sqd );
         
-        let alpha = w.atan2(u);
+        let alpha = <T as num_traits::Float>::atan2(w,u);
         
-        let beta = if airspeed != T::zero() { ( v / airspeed ).asin() } else { T::zero() };
+        let beta = if airspeed != T::zero() { <T as num_traits::Float>::asin( v / airspeed ) } else { T::zero() };
         
-        let q = T::from(0.5) * self.density_model.get_density(&self.body.position()) * airspeed.powi(2);
+        let q = T::from(0.5).unwrap() * self.density_model.get_density(&self.body.position()) * <T as num_traits::Float>::powi(airspeed,2);
         
         AirState {
             alpha,
@@ -122,7 +122,7 @@ impl<T: Real, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
 }
 
 use crate::StateVector;
-impl<T: Real, W: WindModel<T>, D: DensityModel<T>> StateView<T> for AeroBody<T,W,D> {
+impl<T: Float, W: WindModel<T>, D: DensityModel<T>> StateView<T> for AeroBody<T,W,D> {
     
     fn position(&self) -> Vector3<T> {
         self.body.position()

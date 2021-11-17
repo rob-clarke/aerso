@@ -1,8 +1,10 @@
 extern crate nalgebra as na;
-use crate::types::{Real,Vector3,Matrix3,UnitQuaternion,Frame,StateVector,StateView,Force,Torque};
+
+use crate::types::{Vector3,Matrix3,UnitQuaternion,Frame,StateVector,StateView,Force,Torque};
+use crate::types::Float;
 
 /// Represent a 6DoF body affected by gravity
-pub struct Body<T: Real> {
+pub struct Body<T: Float> {
     /// Mass of body (kg)
     mass: T,
     /// Inertia matrix
@@ -14,9 +16,9 @@ pub struct Body<T: Real> {
 }
 
 
-impl<T: Real> Body<T> {
+impl<T: Float> Body<T> {
     
-    const GRAVITY_VECTOR: Vector3<T> = Vector3::new(T::zero(),T::zero(),T::from(physical_constants::STANDARD_ACCELERATION_OF_GRAVITY));
+    const GRAVITY_VECTOR: Vector3<T> = Vector3::new(T::zero(),T::zero(),T::from(physical_constants::STANDARD_ACCELERATION_OF_GRAVITY).unwrap());
 
     /// Create a new instance of Body with `mass` and `inertia` in specified state 
     pub fn new(mass: T, inertia: Matrix3<T>, position: Vector3<T>, velocity: Vector3<T>, attitude: UnitQuaternion<T>, rates: Vector3<T>) -> Self {
@@ -48,12 +50,12 @@ impl<T: Real> Body<T> {
     /// Transforms quantites from the world frame to the body frame
     pub fn get_dcm(state: &StateVector<T>) -> Matrix3<T> {
         let q = state.fixed_rows::<4>(6);
-        let q0 = q[0]; let q02 = q0.powi(2);
-        let q1 = q[1]; let q12 = q1.powi(2);
-        let q2 = q[2]; let q22 = q2.powi(2);
-        let q3 = q[3]; let q32 = q3.powi(2);
+        let q0 = q[0]; let q02 = <T as num_traits::Float>::powi(q0,2);
+        let q1 = q[1]; let q12 = <T as num_traits::Float>::powi(q1,2);
+        let q2 = q[2]; let q22 = <T as num_traits::Float>::powi(q2,2);
+        let q3 = q[3]; let q32 = <T as num_traits::Float>::powi(q3,2);
         
-        let two: T = 2.0.into();
+        let two: T = T::from_f64(2.0).unwrap();
         
         Matrix3::<T>::new(
             q02+q12-q22-q32,   two*(q1*q2+q0*q3), two*(q1*q3-q0*q2),
@@ -94,7 +96,7 @@ impl<T: Real> Body<T> {
         }
         
         let position_dot = Body::get_dcm_body(&state) * state.velocity();
-        let velocity_dot = state.velocity().cross(&state.rates()) + ( (Body::get_dcm(&state) * world_forces) + body_forces ) * (T::from(1.0)/self.mass);
+        let velocity_dot = state.velocity().cross(&state.rates()) + ( (Body::get_dcm(&state) * world_forces) + body_forces ) * <T as num_traits::Float>::recip(self.mass);
         
         let o_x = state.rates()[0];
         let o_y = state.rates()[1];
@@ -106,7 +108,7 @@ impl<T: Real> Body<T> {
             o_z,        o_y,       -o_x,        T::zero()
             );
         
-        let attitude_dot = qdot_matrix * state.fixed_rows::<4>(6) * T::from(0.5);
+        let attitude_dot = qdot_matrix * state.fixed_rows::<4>(6) * T::from(0.5).unwrap();
         let rates_dot = self.inertia_inverse * (Body::get_dcm(&state) * world_torques + body_torques - (self.inertia * state.rates()).cross(&state.rates()) );
         
         StateVector::from_vec(vec![
@@ -129,17 +131,17 @@ impl<T: Real> Body<T> {
     /// NB: Gravity is included by default
     pub fn step(&mut self, forces: &Vec<Force<T>>, torques: &Vec<Torque<T>>, delta_t: T) {
         let k1 = self.get_derivative(&self.statevector, &forces, &torques);
-        let k2 = self.get_derivative(&(self.statevector + k1 * delta_t/T::from(2.0)), &forces, &torques);
-        let k3 = self.get_derivative(&(self.statevector + k2 * delta_t/T::from(2.0)), &forces, &torques);
+        let k2 = self.get_derivative(&(self.statevector + k1 * delta_t/T::from_f64(2.0).unwrap()), &forces, &torques);
+        let k3 = self.get_derivative(&(self.statevector + k2 * delta_t/T::from_f64(2.0).unwrap()), &forces, &torques);
         let k4 = self.get_derivative(&(self.statevector + k3 * delta_t),            &forces, &torques);
         
-        self.statevector = self.statevector + (k1 + k2*T::from(2.0) + k3*T::from(2.0) + k4) * delta_t/T::from(6.0);
+        self.statevector = self.statevector + (k1 + k2*T::from_f64(2.0).unwrap() + k3*T::from_f64(2.0).unwrap() + k4) * delta_t/T::from_f64(6.0).unwrap();
     }
     
 }
 
 /// Add state vector helpers to the Body struct
-impl<T: Real> StateView<T> for Body<T> {
+impl<T: Float> StateView<T> for Body<T> {
     fn position(&self) -> Vector3<T> {
         self.statevector.position()
     }
