@@ -29,7 +29,7 @@ fn run_constant_force(mass: f64, forces: &Vec<Force<f64>>) -> SimResult {
     
     SimResult {
         time,
-        statevector: vehicle.statevector,
+        statevector: vehicle.statevector(),
     }
 }
 
@@ -38,7 +38,7 @@ fn test_gravity() {
     let forces = vec![];
     let result = run_constant_force(1.0,&forces);
         
-    let suvat_result = 0.5 * 9.80665 * result.time.powi(2);
+    let suvat_result = 0.5 * physical_constants::STANDARD_ACCELERATION_OF_GRAVITY * result.time.powi(2);
     assert_relative_eq!(
         result.statevector.position()[2],
         suvat_result,

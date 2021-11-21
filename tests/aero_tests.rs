@@ -35,7 +35,7 @@ fn run_constant_force(forces: &Vec<Force<f64>>) -> SimResult {
     
     SimResult {
         time,
-        statevector: vehicle.body.statevector,
+        statevector: vehicle.body.statevector(),
     }
 }
 

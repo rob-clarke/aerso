@@ -12,7 +12,7 @@ pub struct Body<T: Float = DefaultFloatRepr> {
     /// Inertia inverse
     inertia_inverse: Matrix3<T>,
     /// 13-dimensional state vector
-    pub statevector: StateVector<T>,
+    statevector: StateVector<T>,
 }
 
 

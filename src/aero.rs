@@ -87,7 +87,7 @@ impl<T: Float, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
         
         let current_world_wind = self.wind_model.get_wind(&self.body.position());
         
-        let current_body_wind = self.body.velocity() - Body::get_dcm(&self.body.statevector) * current_world_wind;
+        let current_body_wind = self.body.velocity() - Body::get_dcm(&self.body.statevector()) * current_world_wind;
         
         let u = current_body_wind[0];
         let v = current_body_wind[1];
