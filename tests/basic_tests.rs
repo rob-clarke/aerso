@@ -1,13 +1,8 @@
-use aerso::{Vector3,Matrix3,UnitQuaternion,Body,Force,StateVector,StateView};
+use aerso::{Vector3,Matrix3,UnitQuaternion,Body,Force,Torque,StateVector,StateView};
 
 use approx::assert_relative_eq;
 
-struct SimResult {
-    time: f64,
-    statevector: StateVector<f64>,
-}
-
-fn run_constant_force(mass: f64, forces: &Vec<Force<f64>>) -> SimResult {
+fn run_with_constant_ft(mass: f64, forces: &Vec<Force>, torques: &Vec<Torque>) -> (f64,StateVector) {
     let initial_position = Vector3::zeros();
     let initial_velocity = Vector3::zeros();
     let initial_attitude = UnitQuaternion::from_euler_angles(0.0,0.0,0.0);
@@ -18,29 +13,23 @@ fn run_constant_force(mass: f64, forces: &Vec<Force<f64>>) -> SimResult {
     let a = vehicle.attitude(); 
     println!("[{},\n{},\n{},\n{}]",a[0],a[1],a[2],a[3]);
     
-    let torques = vec![];
-    
-    let delta_t = 0.1;
+    let delta_t = 0.01;
     let mut time = 0.0;
     while time < 10.0 {
-        vehicle.step(forces, &torques, delta_t);
+        vehicle.step(forces, torques, delta_t);
         time += delta_t;
     }
     
-    SimResult {
-        time,
-        statevector: vehicle.statevector(),
-    }
+    (time,vehicle.statevector())
 }
 
 #[test]
 fn test_gravity() {
-    let forces = vec![];
-    let result = run_constant_force(1.0,&forces);
+    let result = run_with_constant_ft(1.0,&vec![],&vec![]);
         
-    let suvat_result = 0.5 * physical_constants::STANDARD_ACCELERATION_OF_GRAVITY * result.time.powi(2);
+    let suvat_result = 0.5 * physical_constants::STANDARD_ACCELERATION_OF_GRAVITY * result.0.powi(2);
     assert_relative_eq!(
-        result.statevector.position()[2],
+        result.1.position().z,
         suvat_result,
         max_relative = 0.00001);
 }
@@ -51,14 +40,40 @@ fn test_force() {
     const MASS: f64 = 2.0;
 
     let thrust = Force::body(FORCE_X,0.0,0.0);
-    let forces = vec![thrust];
     
-    let result = run_constant_force(MASS,&forces);
+    let result = run_with_constant_ft(MASS,&vec![thrust],&vec![]);
     
+    // x
+    let suvat_result = 0.5 * FORCE_X/MASS * result.0.powi(2);
+    assert_relative_eq!(result.1.position().x,suvat_result, max_relative = 0.00001);
+    
+    // y
+    assert_relative_eq!(result.1.position().y,0.0, max_relative = 0.00001);
 
-    let suvat_result = 0.5 * FORCE_X/MASS * result.time.powi(2);
+    // z
+    let suvat_result = 0.5 * physical_constants::STANDARD_ACCELERATION_OF_GRAVITY * result.0.powi(2);
+    assert_relative_eq!(result.1.position().z,suvat_result, max_relative = 0.00001);
+}
+
+#[test]
+fn test_torque() {
+    const TORQUE_X: f64 = 1.0;
+    const MASS: f64 = 2.0;
+
+    let roll_moment = Torque::body(TORQUE_X,0.0,0.0);
+    
+    let result = run_with_constant_ft(MASS,&vec![],&vec![roll_moment]);
+    
+    let suvat_result = 0.5 * physical_constants::STANDARD_ACCELERATION_OF_GRAVITY * result.0.powi(2);
     assert_relative_eq!(
-        result.statevector.position()[0],
+        result.1.position()[2],
         suvat_result,
         max_relative = 0.00001);
+    
+    let suvat_result = TORQUE_X * result.0;
+    assert_relative_eq!(
+        result.1.rates().x,
+        suvat_result,
+        max_relative = 0.00001);
+    
 }
