@@ -17,3 +17,4 @@ name = "aerso"
 
 [features]
 single-precision = []
+constrain-qnorm-drift = []

@@ -3,6 +3,9 @@ extern crate nalgebra as na;
 use crate::types::{Vector3,Matrix3,UnitQuaternion,Frame,StateVector,StateView,Force,Torque};
 use crate::types::{Float,DefaultFloatRepr};
 
+// Integrating Rotations using Non-Unit Quaternions
+// https://par.nsf.gov/servlets/purl/10097724
+
 /// Represent a 6DoF body affected by gravity
 pub struct Body<T: Float = DefaultFloatRepr> {
     /// Mass of body (kg)
@@ -17,14 +20,17 @@ pub struct Body<T: Float = DefaultFloatRepr> {
 
 
 impl<T: Float> Body<T> {
-    
+    /// Create a new instance of Body with `mass` and `inertia` at the origin
+    pub fn new_at_origin(mass: T, inertia: Matrix3<T>) -> Self {
+        Body::new(mass, inertia, Vector3::zeros(), Vector3::zeros(), UnitQuaternion::from_euler_angles(T::zero(),T::zero(),T::zero()), Vector3::zeros())
+    }
     
     /// Create a new instance of Body with `mass` and `inertia` in specified state 
     pub fn new(mass: T, inertia: Matrix3<T>, position: Vector3<T>, velocity: Vector3<T>, attitude: UnitQuaternion<T>, rates: Vector3<T>) -> Self {
         let statevector = StateVector::from_vec(vec![
             position[0], position[1], position[2],
             velocity[0], velocity[1], velocity[2],
-            attitude[3], attitude[0], attitude[1], attitude[2],
+            attitude[0], attitude[1], attitude[2], attitude[3],
             rates[0],    rates[1],    rates[2]
             ]);
         Body::new_from_statevector(mass,inertia,statevector)
@@ -33,6 +39,10 @@ impl<T: Float> Body<T> {
     /// Create a new instance of Body with `mass` and `inertia` in specified state
     /// statevector is made of [position,body_velocity,attitude_quaternion,body_axis_rates]
     pub fn new_from_statevector(mass: T, inertia: Matrix3<T>, statevector: StateVector<T>) -> Self {
+        if mass <= T::zero() {
+            panic!("Mass must be >= 0.0")
+        }
+        
         let inertia_inverse = match inertia.try_inverse() {
             Some(inverted) => inverted,
             None => { panic!("Unable to invert inertia matrix") }
@@ -48,19 +58,22 @@ impl<T: Float> Body<T> {
     /// Construct the Direction Cosine Matrix (DCM) from the state attitude
     /// Transforms quantites from the world frame to the body frame
     pub fn get_dcm(state: &StateVector<T>) -> Matrix3<T> {
+        // Don't use attitude here to avoid unessecary square root call
         let q = state.fixed_rows::<4>(6);
-        let q0 = q[0]; let q02 = <T as num_traits::Float>::powi(q0,2);
-        let q1 = q[1]; let q12 = <T as num_traits::Float>::powi(q1,2);
-        let q2 = q[2]; let q22 = <T as num_traits::Float>::powi(q2,2);
-        let q3 = q[3]; let q32 = <T as num_traits::Float>::powi(q3,2);
+        let q0 = q[3]; let q02 = <T as num_traits::Float>::powi(q0,2); // Real part (w)
+        let q1 = q[0]; let q12 = <T as num_traits::Float>::powi(q1,2); // i
+        let q2 = q[1]; let q22 = <T as num_traits::Float>::powi(q2,2); // j
+        let q3 = q[2]; let q32 = <T as num_traits::Float>::powi(q3,2); // k
         
         let two: T = T::from_f64(2.0).unwrap();
         
+        // NB: This appears as the transpose of Eq. (13) from the referenced paper
+        // This matches the convention of the Stengel notes
         Matrix3::<T>::new(
             q02+q12-q22-q32,   two*(q1*q2+q0*q3), two*(q1*q3-q0*q2),
             two*(q1*q2-q0*q3), q02-q12+q22-q32,   two*(q2*q3+q0*q1),
             two*(q1*q3+q0*q2), two*(q2*q3-q0*q1), q02-q12-q22+q32
-        )
+        ) * <T as num_traits::Float>::recip(q02+q12+q22+q32)
     }
     
     /// Construct the inverse DCM
@@ -99,21 +112,42 @@ impl<T: Float> Body<T> {
             }
         }
         
-        let position_dot = Body::get_dcm_body(&state) * state.velocity();
-        let velocity_dot = state.velocity().cross(&state.rates()) + ( (Body::get_dcm(&state) * world_forces) + body_forces ) * <T as num_traits::Float>::recip(self.mass);
+        let dcm = Body::get_dcm(&state);
+        let dcm_body = dcm.transpose();
+
+        let position_dot = dcm_body * state.velocity();
+        let velocity_dot = state.velocity().cross(&state.rates()) + ( (dcm * world_forces) + body_forces ) * <T as num_traits::Float>::recip(self.mass);
         
         let o_x = state.rates()[0];
         let o_y = state.rates()[1];
         let o_z = state.rates()[2];
+        // NB: This matrix appears different from Eq. (21) in the reference due to quaternion ordering
+        // The paper uses [w,i,j,k] but nalgebra uses [i,j,k,w]
+        // Hence row/column 1 is shifted to row/column 4
         let qdot_matrix = na::Matrix4::<T>::new(
-            T::zero(), -o_x,       -o_y,       -o_z,
-            o_x,        T::zero(),  o_z,       -o_y,
-            o_y,       -o_z,        T::zero(),  o_x,
-            o_z,        o_y,       -o_x,        T::zero()
+            T::zero(), o_z,       -o_y,       o_x,
+            -o_z,      T::zero(), o_x,        o_y,
+             o_y,      -o_x,      T::zero(),  o_z,
+            -o_x,      -o_y,      -o_z,       T::zero()
             );
         
-        let attitude_dot = qdot_matrix * state.fixed_rows::<4>(6) * T::from(0.5).unwrap();
-        let rates_dot = self.inertia_inverse * (Body::get_dcm(&state) * world_torques + body_torques - (self.inertia * state.rates()).cross(&state.rates()) );
+        // NB: Quaternion does not remain normalised throughout integration
+        let q = state.fixed_rows::<4>(6); // Don't use attitude here to avoid uneccesary square root
+        #[cfg(not(feature="constrain-qnorm-drift"))]
+        let attitude_dot = qdot_matrix * q * T::from(0.5).unwrap();
+        #[cfg(feature="constrain-qnorm-drift")]
+        let attitude_dot = {
+            // Use Eq. (23) from the paper to set the free parameter to constrain the drift of the quaternion norm
+            let qnorm = <T as num_traits::Float>::powi(q[0],2) + 
+                        <T as num_traits::Float>::powi(q[1],2) +
+                        <T as num_traits::Float>::powi(q[2],2) +
+                        <T as num_traits::Float>::powi(q[3],2);
+            let k = T::from_f64(0.001).unwrap();
+            let c = k * (T::one() - qnorm);
+            qdot_matrix * q * T::from(0.5).unwrap() + q * c
+            };
+        
+            let rates_dot = self.inertia_inverse * (dcm * world_torques + body_torques - (self.inertia * state.rates()).cross(&state.rates()) );
         
         StateVector::from_vec(vec![
             position_dot[0], position_dot[1], position_dot[2],
@@ -165,4 +199,129 @@ impl<T: Float> StateView<T> for Body<T> {
     fn statevector(&self) -> StateVector<T> {
         self.statevector
     }
+}
+
+#[cfg(test)]
+mod test {
+    use approx::assert_relative_eq;
+    use super::*;
+
+    #[test]
+    #[should_panic]
+    fn test_non_invertible_inertia() {
+        let inertia = Matrix3::new(
+            1.0,0.0,0.0,
+            0.0,1.0,0.0,
+            0.0,0.0,0.0);
+        Body::new_at_origin(1.0,inertia);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_zero_mass() {
+        let inertia = Matrix3::identity();
+        Body::new_at_origin(0.0,inertia);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_negative_mass() {
+        let inertia = Matrix3::identity();
+        Body::new_at_origin(-1.0,inertia);
+    }
+
+    #[test]
+    fn test_get_dcm() {
+        let state = StateVector::from_vec(vec![
+        0.0, 0.0, 0.0,
+        1.0, 2.0, 3.0,
+        0.0, 0.0, 0.0, 1.0,
+        0.0, 0.0, 0.0
+        ]);
+        
+        let dcm = Body::get_dcm(&state);
+        assert_relative_eq!(dcm[0],1.0);
+        assert_relative_eq!(dcm[1],0.0);
+        assert_relative_eq!(dcm[2],0.0);
+        
+        assert_relative_eq!(dcm[3],0.0);
+        assert_relative_eq!(dcm[4],1.0);
+        assert_relative_eq!(dcm[5],0.0);
+
+        assert_relative_eq!(dcm[6],0.0);
+        assert_relative_eq!(dcm[7],0.0);
+        assert_relative_eq!(dcm[8],1.0);
+
+        let inertia = Matrix3::identity();
+        let mut body = Body::new_from_statevector(1.0,inertia,state);
+
+        body.step(&vec![],&vec![],0.1);
+
+        let attitude = body.attitude();
+        assert_relative_eq!(attitude.i,0.0);
+        assert_relative_eq!(attitude.j,0.0);
+        assert_relative_eq!(attitude.k,0.0);
+        assert_relative_eq!(attitude.w,1.0);
+
+    }
+
+    #[test]
+    fn test_derivative() {
+        let inertia = Matrix3::identity();
+        let body = Body::new_at_origin(1.0,inertia);
+        {
+            let state = StateVector::from_vec(vec![
+            0.0, 0.0, 0.0,
+            1.0, 2.0, 3.0,
+            0.0, 0.0, 0.0, 1.0,
+            0.0, 0.0, 0.0
+            ]);
+        
+            let derivative = body.get_derivative(&state,&vec![],&vec![]);
+            assert_relative_eq!(derivative[0],1.0);
+            assert_relative_eq!(derivative[1],2.0);
+            assert_relative_eq!(derivative[2],3.0);
+            
+            assert_relative_eq!(derivative[3],0.0);
+            assert_relative_eq!(derivative[4],0.0);
+            assert_relative_eq!(derivative[5],physical_constants::STANDARD_ACCELERATION_OF_GRAVITY);
+
+            assert_relative_eq!(derivative[6],0.0);
+            assert_relative_eq!(derivative[7],0.0);
+            assert_relative_eq!(derivative[8],0.0);
+            assert_relative_eq!(derivative[9],0.0);
+
+            assert_relative_eq!(derivative[10],0.0);
+            assert_relative_eq!(derivative[11],0.0);
+            assert_relative_eq!(derivative[12],0.0);
+        }
+        {
+            let state = StateVector::from_vec(vec![
+            0.0, 0.0, 0.0,
+            1.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+            5.0, 0.0, 0.0
+            ]);
+        
+            let derivative = body.get_derivative(&state,&vec![],&vec![]);
+            assert_relative_eq!(derivative[0],1.0);
+            assert_relative_eq!(derivative[1],0.0);
+            assert_relative_eq!(derivative[2],0.0);
+            
+            assert_relative_eq!(derivative[3],0.0);
+            assert_relative_eq!(derivative[4],0.0);
+            assert_relative_eq!(derivative[5],physical_constants::STANDARD_ACCELERATION_OF_GRAVITY);
+
+            assert_relative_eq!(derivative[6],2.5);
+            assert_relative_eq!(derivative[7],0.0);
+            assert_relative_eq!(derivative[8],0.0);
+            assert_relative_eq!(derivative[9],0.0);
+
+            assert_relative_eq!(derivative[10],0.0);
+            assert_relative_eq!(derivative[11],0.0);
+            assert_relative_eq!(derivative[12],0.0);
+        }
+
+    }
+
 }
