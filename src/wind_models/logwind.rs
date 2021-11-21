@@ -34,7 +34,12 @@ impl<T: Float> WindModel<T> for LogWind<T> {
     fn step(&mut self, _delta_t: T) {}
 }
 
-#[test]
-fn test_logcalc() {
-    
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_logcalc() {
+        
+    }
 }

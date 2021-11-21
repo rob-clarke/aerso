@@ -21,8 +21,12 @@ impl<T: Float> WindModel<T> for ConstantWind<T> {
     fn step(&mut self, _delta_t: T) {}
 }
 
-#[test]
-fn test_constant() {
-    // Create random wind
-    // Test output is the same
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn test_constant() {
+        // Create random wind
+        // Test output is the same
+    }
 }
