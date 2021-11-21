@@ -1,3 +1,5 @@
+#![warn(clippy::all)]
+
 extern crate aerso;
 
 fn main() {
@@ -35,8 +37,7 @@ fn main() {
             const C_L_ALPHA: f64 = 2.0*std::f64::consts::PI as f64;
             const C_L0: f64 = 0.1;
             
-            let c_l = C_L_ALPHA * (AR/(AR+2.0)) * airstate.alpha + C_L0;
-            return c_l;
+            C_L_ALPHA * (AR/(AR+2.0)) * airstate.alpha + C_L0
         }
     }
     impl<T: Copy> AeroEffect<T> for Drag {

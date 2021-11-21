@@ -1,3 +1,5 @@
+#![warn(clippy::all)]
+
 mod types;
 
 mod kinematics;

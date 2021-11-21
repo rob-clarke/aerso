@@ -1,3 +1,5 @@
+#![warn(clippy::all)]
+
 use aerso::{AeroBody,Vector3,Matrix3,UnitQuaternion,Body,Force,StateVector,StateView};
 
 use aerso::wind_models::ConstantWind;
@@ -9,7 +11,7 @@ struct SimResult {
     statevector: StateVector<f64>,
 }
 
-fn run_constant_force(forces: &Vec<Force<f64>>) -> SimResult {
+fn run_constant_force(forces: &[Force]) -> SimResult {
     let initial_position = Vector3::zeros();
     let initial_velocity = Vector3::zeros();
     let initial_attitude = UnitQuaternion::from_euler_angles(0.0,0.0,0.0);
@@ -41,8 +43,7 @@ fn run_constant_force(forces: &Vec<Force<f64>>) -> SimResult {
 
 #[test]
 fn test_gravity() {
-    let forces = vec![];
-    let result = run_constant_force(&forces);
+    let result = run_constant_force(&[]);
         
     let suvat_result = 0.5 * 9.80665 * result.time.powi(2);
     assert_relative_eq!(
@@ -54,9 +55,8 @@ fn test_gravity() {
 #[test]
 fn test_force() {
     let thrust = Force::body(4.0,0.0,0.0);
-    let forces = vec![thrust];
     
-    let result = run_constant_force(&forces);
+    let result = run_constant_force(&[thrust]);
     
     let suvat_result = 0.5 * 4.0/1.0 * result.time.powi(2);
     assert_relative_eq!(

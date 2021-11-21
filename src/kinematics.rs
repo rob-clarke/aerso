@@ -88,7 +88,7 @@ impl<T: Float> Body<T> {
     /// torques: Vector of applied torques, both world and body frame
     /// 
     /// NB: Gravity is included by default
-    fn get_derivative(&self, state: &StateVector<T>, forces: &Vec<Force<T>>, torques: &Vec<Torque<T>>) -> StateVector<T> {
+    fn get_derivative(&self, state: &StateVector<T>, forces: &[Force<T>], torques: &[Torque<T>]) -> StateVector<T> {
         let gravity_accel: Vector3<T> = Vector3::new(
             T::zero(),
             T::zero(),
@@ -112,7 +112,7 @@ impl<T: Float> Body<T> {
             }
         }
         
-        let dcm = Body::get_dcm(&state);
+        let dcm = Body::get_dcm(state);
         let dcm_body = dcm.transpose();
 
         let position_dot = dcm_body * state.velocity();
@@ -167,13 +167,13 @@ impl<T: Float> Body<T> {
     /// deltaT: Timestep (s)
     ///
     /// NB: Gravity is included by default
-    pub fn step(&mut self, forces: &Vec<Force<T>>, torques: &Vec<Torque<T>>, delta_t: T) {
-        let k1 = self.get_derivative(&self.statevector, &forces, &torques);
-        let k2 = self.get_derivative(&(self.statevector + k1 * delta_t/T::from_f64(2.0).unwrap()), &forces, &torques);
-        let k3 = self.get_derivative(&(self.statevector + k2 * delta_t/T::from_f64(2.0).unwrap()), &forces, &torques);
-        let k4 = self.get_derivative(&(self.statevector + k3 * delta_t),            &forces, &torques);
+    pub fn step(&mut self, forces: &[Force<T>], torques: &[Torque<T>], delta_t: T) {
+        let k1 = self.get_derivative( &self.statevector,                                           forces, torques);
+        let k2 = self.get_derivative(&(self.statevector + k1 * delta_t/T::from_f64(2.0).unwrap()), forces, torques);
+        let k3 = self.get_derivative(&(self.statevector + k2 * delta_t/T::from_f64(2.0).unwrap()), forces, torques);
+        let k4 = self.get_derivative(&(self.statevector + k3 * delta_t),                           forces, torques);
         
-        self.statevector = self.statevector + (k1 + k2*T::from_f64(2.0).unwrap() + k3*T::from_f64(2.0).unwrap() + k4) * delta_t/T::from_f64(6.0).unwrap();
+        self.statevector += (k1 + k2*T::from_f64(2.0).unwrap() + k3*T::from_f64(2.0).unwrap() + k4) * delta_t/T::from_f64(6.0).unwrap();
     }
     
 }
@@ -255,7 +255,7 @@ mod test {
         let inertia = Matrix3::identity();
         let mut body = Body::new_from_statevector(1.0,inertia,state);
 
-        body.step(&vec![],&vec![],0.1);
+        body.step(&[],&[],0.1);
 
         let attitude = body.attitude();
         assert_relative_eq!(attitude.i,0.0);
@@ -277,7 +277,7 @@ mod test {
             0.0, 0.0, 0.0
             ]);
         
-            let derivative = body.get_derivative(&state,&vec![],&vec![]);
+            let derivative = body.get_derivative(&state,&[],&[]);
             assert_relative_eq!(derivative[0],1.0);
             assert_relative_eq!(derivative[1],2.0);
             assert_relative_eq!(derivative[2],3.0);
@@ -303,7 +303,7 @@ mod test {
             5.0, 0.0, 0.0
             ]);
         
-            let derivative = body.get_derivative(&state,&vec![],&vec![]);
+            let derivative = body.get_derivative(&state,&[],&[]);
             assert_relative_eq!(derivative[0],1.0);
             assert_relative_eq!(derivative[1],0.0);
             assert_relative_eq!(derivative[2],0.0);

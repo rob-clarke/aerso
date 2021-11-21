@@ -27,7 +27,7 @@ impl StandardDensity {
 }
 impl<T: Float> DensityModel<T> for StandardDensity {
     fn get_density(&self, _position: &Vector3<T>) -> T {
-        return T::from(Self::ISA_STANDARD_DENSITY).unwrap();
+        T::from(Self::ISA_STANDARD_DENSITY).unwrap()
     }
 }
 
@@ -115,7 +115,7 @@ impl<T: Float, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
     
     /// Propagate the body state and wind_model by delta_t under the supplied forces and torques
     /// See the documentation for Body::step for further details
-    pub fn step(&mut self, forces: &Vec<Force<T>>, torques: &Vec<Torque<T>>, delta_t: T) {
+    pub fn step(&mut self, forces: &[Force<T>], torques: &[Torque<T>], delta_t: T) {
         self.wind_model.step(delta_t);
         self.body.step(forces, torques, delta_t);        
     }

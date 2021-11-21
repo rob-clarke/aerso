@@ -1,8 +1,10 @@
+#![warn(clippy::all)]
+
 use aerso::{Vector3,Matrix3,UnitQuaternion,Body,Force,Torque,StateVector,StateView};
 
 use approx::assert_relative_eq;
 
-fn run_with_constant_ft(mass: f64, forces: &Vec<Force>, torques: &Vec<Torque>) -> (f64,StateVector) {
+fn run_with_constant_ft(mass: f64, forces: &[Force], torques: &[Torque]) -> (f64,StateVector) {
     let initial_position = Vector3::zeros();
     let initial_velocity = Vector3::zeros();
     let initial_attitude = UnitQuaternion::from_euler_angles(0.0,0.0,0.0);
@@ -25,7 +27,7 @@ fn run_with_constant_ft(mass: f64, forces: &Vec<Force>, torques: &Vec<Torque>) -
 
 #[test]
 fn test_gravity() {
-    let result = run_with_constant_ft(1.0,&vec![],&vec![]);
+    let result = run_with_constant_ft(1.0,&[],&[]);
         
     let suvat_result = 0.5 * physical_constants::STANDARD_ACCELERATION_OF_GRAVITY * result.0.powi(2);
     assert_relative_eq!(
@@ -41,7 +43,7 @@ fn test_force() {
 
     let thrust = Force::body(FORCE_X,0.0,0.0);
     
-    let result = run_with_constant_ft(MASS,&vec![thrust],&vec![]);
+    let result = run_with_constant_ft(MASS,&[thrust],&[]);
     
     // x
     let suvat_result = 0.5 * FORCE_X/MASS * result.0.powi(2);
@@ -62,7 +64,7 @@ fn test_torque() {
 
     let roll_moment = Torque::body(TORQUE_X,0.0,0.0);
     
-    let result = run_with_constant_ft(MASS,&vec![],&vec![roll_moment]);
+    let result = run_with_constant_ft(MASS,&[],&[roll_moment]);
     
     let suvat_result = 0.5 * physical_constants::STANDARD_ACCELERATION_OF_GRAVITY * result.0.powi(2);
     assert_relative_eq!(
