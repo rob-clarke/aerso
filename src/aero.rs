@@ -1,8 +1,8 @@
 use crate::{Vector3,Body,Force,Torque,StateView,Frame,UnitQuaternion};
-use crate::types::Float;
+use crate::types::{Float,DefaultFloatRepr};
 
 /// Trait for general wind model
-pub trait WindModel<T: Float> {
+pub trait WindModel<T: Float = DefaultFloatRepr> {
     
     /// Return the current wind at the specified position in world frame coordinates
     /// Both vectors should be in North-East-Down frame
@@ -14,7 +14,7 @@ pub trait WindModel<T: Float> {
 }
 
 /// Trait for general density model
-pub trait DensityModel<T: Float> {
+pub trait DensityModel<T: Float = DefaultFloatRepr> {
 
     /// Return the current density at the specified position (kg.m^-3)
     fn get_density(&self, position: &Vector3<T>) -> T;
@@ -33,7 +33,7 @@ impl<T: Float> DensityModel<T> for StandardDensity {
 
 /// Represent generic air state
 #[derive(Clone,Copy)]
-pub struct AirState<T: Float> {
+pub struct AirState<T: Float = DefaultFloatRepr> {
     /// Angle of attack (radians)
     pub alpha: T,
     /// Angle of sideslip (radians)
@@ -45,7 +45,7 @@ pub struct AirState<T: Float> {
 }
 
 /// Represent a body with aerodynamics helpers
-pub struct AeroBody<T: Float, W: WindModel<T>, D: DensityModel<T>> {
+pub struct AeroBody<T: Float = DefaultFloatRepr, W: WindModel<T> = ConstantWind<T>, D: DensityModel<T> = StandardDensity> {
     /// The underlying rigid body
     pub body: Body<T>,
     /// Optional wind model
@@ -63,7 +63,7 @@ impl<T: Float> AeroBody<T,ConstantWind<T>,StandardDensity> {
     }
 }
 
-impl<T: Float, W: WindModel<T>> AeroBody<T,W,StandardDensity> {
+impl<W: WindModel<T>, T: Float> AeroBody<T,W,StandardDensity> {
     /// Create an AeroBody with a WindModel and constant ISA standard sea-level density
     pub fn with_wind_model(body: Body<T>, wind_model: W) -> Self {
         let density_model = StandardDensity{};
@@ -122,7 +122,7 @@ impl<T: Float, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
 }
 
 use crate::StateVector;
-impl<T: Float, W: WindModel<T>, D: DensityModel<T>> StateView<T> for AeroBody<T,W,D> {
+impl<W: WindModel<T>, D: DensityModel<T>, T: Float> StateView<T> for AeroBody<T,W,D> {
     
     fn position(&self) -> Vector3<T> {
         self.body.position()

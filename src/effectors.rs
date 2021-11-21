@@ -1,17 +1,20 @@
 use crate::{Vector3,Force,Torque,AeroBody,Frame,AirState,WindModel,DensityModel};
-use crate::types::Float;
+use crate::types::{Float,DefaultFloatRepr};
 
 /// Interface to an aerodynamic effect
-pub trait AeroEffect<T: Float,I: Copy> {
+pub trait AeroEffect<I: Copy = [DefaultFloatRepr;4], T: Float = DefaultFloatRepr> {
     fn get_effect(&self, airstate: AirState<T>, rates: Vector3<T>, inputstate: I) -> (Force<T>,Torque<T>);
 }
 
-pub struct AffectedBody<T: Float, W: WindModel<T>, D: DensityModel<T>, I: Copy> {
+use crate::wind_models::ConstantWind;
+use crate::aero::StandardDensity;
+
+pub struct AffectedBody<I: Copy = [DefaultFloatRepr;4], T: Float = DefaultFloatRepr, W: WindModel<T> = ConstantWind<T>, D: DensityModel<T> = StandardDensity> {
     pub body: AeroBody<T,W,D>,
-    pub effectors: Vec<Box<dyn AeroEffect<T,I>>>,
+    pub effectors: Vec<Box<dyn AeroEffect<I,T>>>,
 }
 
-impl<T: Float, W: WindModel<T>, D: DensityModel<T>, I: Copy> AffectedBody<T,W,D,I> {
+impl<I: Copy, T: Float, W: WindModel<T>, D: DensityModel<T>> AffectedBody<I,T,W,D> {
     
    pub fn step(&mut self, delta_t: T, inputstate: I) {
        let airstate = self.body.get_airstate();
@@ -31,7 +34,7 @@ impl<T: Float, W: WindModel<T>, D: DensityModel<T>, I: Copy> AffectedBody<T,W,D,
 }
 
 use crate::{StateView,StateVector,UnitQuaternion};
-impl<T: Float, W: WindModel<T>, D: DensityModel<T>, I: Copy> StateView<T> for AffectedBody<T,W,D,I> {
+impl<T: Float, W: WindModel<T>, D: DensityModel<T>, I: Copy> StateView<T> for AffectedBody<I,T,W,D> {
     fn position(&self) -> Vector3<T> {
         self.body.position()
     }

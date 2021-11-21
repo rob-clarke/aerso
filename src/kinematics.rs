@@ -1,10 +1,10 @@
 extern crate nalgebra as na;
 
 use crate::types::{Vector3,Matrix3,UnitQuaternion,Frame,StateVector,StateView,Force,Torque};
-use crate::types::Float;
+use crate::types::{Float,DefaultFloatRepr};
 
 /// Represent a 6DoF body affected by gravity
-pub struct Body<T: Float> {
+pub struct Body<T: Float = DefaultFloatRepr> {
     /// Mass of body (kg)
     mass: T,
     /// Inertia matrix

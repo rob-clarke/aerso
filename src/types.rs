@@ -1,10 +1,16 @@
 extern crate nalgebra as na;
 
-pub type Vector3<T> = na::Vector3<T>;
-pub type Matrix3<T> = na::Matrix3<T>;
-pub type UnitQuaternion<T> = na::UnitQuaternion<T>;
+#[cfg(not(feature="single-precision"))]
+pub type DefaultFloatRepr = f64;
 
-pub type StateVector<T> = na::SVector<T,13>;
+#[cfg(feature="single-precision")]
+pub type DefaultFloatRepr = f32;
+
+pub type Vector3<T = DefaultFloatRepr> = na::Vector3<T>;
+pub type Matrix3<T = DefaultFloatRepr> = na::Matrix3<T>;
+pub type UnitQuaternion<T = DefaultFloatRepr> = na::UnitQuaternion<T>;
+
+pub type StateVector<T = DefaultFloatRepr> = na::SVector<T,13>;
 
 pub trait Float: num_traits::Float + num_traits::FromPrimitive + na::RealField {}
 impl Float for f32 {}
@@ -19,7 +25,7 @@ pub enum Frame {
 
 /// Represent a force in either body or world reference frame
 #[derive(Copy,Clone)]
-pub struct Force<T: Float> {
+pub struct Force<T: Float = DefaultFloatRepr> {
     pub force: Vector3<T>,
     pub frame: Frame,
 }
@@ -45,7 +51,7 @@ impl<T: Float> Force<T> {
 
 /// Represent a torque in either body or world reference frame
 #[derive(Copy,Clone)]
-pub struct Torque<T: Float> {
+pub struct Torque<T: Float = DefaultFloatRepr> {
     pub torque: Vector3<T>,
     pub frame: Frame,
 }
@@ -70,7 +76,7 @@ impl<T: Float> Torque<T> {
 }
 
 /// Trait to allow more meaningful access to the state vector
-pub trait StateView<T: Float> {
+pub trait StateView<T: Float = DefaultFloatRepr> {
     
     /// Return the world-frame position
     fn position(&self) -> Vector3<T>;
