@@ -9,14 +9,14 @@ pub struct PowerWind<T: Float> {
 }
 
 impl<T: Float> PowerWind<T> {
-    const ALPHA_TYPICAL: T = T::from(0.143).unwrap();
     
     pub fn new_with_alpha(u_r: T, z_r: T, bearing: T, alpha: T) -> Self {
         PowerWind { u_r, z_r, bearing, alpha }
     }
     
     pub fn new(u_r: T, z_r: T, bearing: T) -> Self {
-        PowerWind::new_with_alpha(u_r, z_r, bearing, PowerWind::ALPHA_TYPICAL)
+        let alpha_typical = T::from(0.143).unwrap();
+        PowerWind::new_with_alpha(u_r, z_r, bearing, alpha_typical)
     }
 }
 

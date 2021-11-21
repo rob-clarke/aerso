@@ -1,13 +1,13 @@
-use aerso::{Float,Vector3,Matrix3,UnitQuaternion,Body,Force,StateVector,StateView};
+use aerso::{Vector3,Matrix3,UnitQuaternion,Body,Force,StateVector,StateView};
 
 use approx::assert_relative_eq;
 
 struct SimResult {
-    time: Float,
-    statevector: StateVector,
+    time: f64,
+    statevector: StateVector<f64>,
 }
 
-fn run_constant_force(mass: Float, forces: &Vec<Force>) -> SimResult {
+fn run_constant_force(mass: f64, forces: &Vec<Force<f64>>) -> SimResult {
     let initial_position = Vector3::zeros();
     let initial_velocity = Vector3::zeros();
     let initial_attitude = UnitQuaternion::from_euler_angles(0.0,0.0,0.0);
@@ -47,8 +47,8 @@ fn test_gravity() {
 
 #[test]
 fn test_force() {
-    const FORCE_X: Float = 4.0;
-    const MASS: Float = 2.0;
+    const FORCE_X: f64 = 4.0;
+    const MASS: f64 = 2.0;
 
     let thrust = Force::body(FORCE_X,0.0,0.0);
     let forces = vec![thrust];

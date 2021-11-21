@@ -1,15 +1,15 @@
-use aerso::{AeroBody,Float,Vector3,Matrix3,UnitQuaternion,Body,Force,StateVector,StateView};
+use aerso::{AeroBody,Vector3,Matrix3,UnitQuaternion,Body,Force,StateVector,StateView};
 
 use aerso::wind_models::ConstantWind;
 
 use approx::assert_relative_eq;
 
 struct SimResult {
-    time: Float,
-    statevector: StateVector,
+    time: f64,
+    statevector: StateVector<f64>,
 }
 
-fn run_constant_force(forces: &Vec<Force>) -> SimResult {
+fn run_constant_force(forces: &Vec<Force<f64>>) -> SimResult {
     let initial_position = Vector3::zeros();
     let initial_velocity = Vector3::zeros();
     let initial_attitude = UnitQuaternion::from_euler_angles(0.0,0.0,0.0);

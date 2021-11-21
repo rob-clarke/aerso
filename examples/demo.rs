@@ -8,8 +8,8 @@ fn main() {
     const AR: f64 = 5.0;
     
     struct Lift;
-    impl<T: Copy> AeroEffect<T> for Lift {
-        fn get_effect(&self, airstate: AirState, _rates: Vector3, _inputstate: T) -> (Force,Torque) {
+    impl<T: Copy> AeroEffect<f64,T> for Lift {
+        fn get_effect(&self, airstate: AirState<f64>, _rates: Vector3<f64>, _inputstate: T) -> (Force<f64>,Torque<f64>) {
             const C_L_ALPHA: f64 = 2.0*std::f64::consts::PI;
             const C_L0: f64 = 0.1;
             
@@ -21,8 +21,8 @@ fn main() {
     }
     
     struct Thrust;
-    impl AeroEffect<[f64;1]> for Thrust {
-        fn get_effect(&self, _airstate: AirState, _rates: Vector3, inputstate: [f64;1]) -> (Force,Torque) {
+    impl AeroEffect<f64,[f64;1]> for Thrust {
+        fn get_effect(&self, _airstate: AirState<f64>, _rates: Vector3<f64>, inputstate: [f64;1]) -> (Force<f64>,Torque<f64>) {
             let power = inputstate[0];
             let thrust = -0.0000830488*power.powi(2) + 0.0704307060*power + 0.5996810096;
             (Force::body(thrust,0.0,0.0),Torque::body(0.0,0.0,0.0))
@@ -31,7 +31,7 @@ fn main() {
     
     struct Drag;
     impl Drag {
-        fn get_cl(&self, airstate: AirState) -> f64 {
+        fn get_cl(&self, airstate: AirState<f64>) -> f64 {
             const C_L_ALPHA: f64 = 2.0*std::f64::consts::PI as f64;
             const C_L0: f64 = 0.1;
             
@@ -39,8 +39,8 @@ fn main() {
             return c_l;
         }
     }
-    impl<T: Copy> AeroEffect<T> for Drag {
-        fn get_effect(&self, airstate: AirState, _rates: Vector3, _inputstate: T) -> (Force,Torque) {
+    impl<T: Copy> AeroEffect<f64,T> for Drag {
+        fn get_effect(&self, airstate: AirState<f64>, _rates: Vector3<f64>, _inputstate: T) -> (Force<f64>,Torque<f64>) {
             const C_D_MIN: f64 = 0.06;
             let c_l = self.get_cl(airstate);
             

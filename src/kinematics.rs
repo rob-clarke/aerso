@@ -18,8 +18,7 @@ pub struct Body<T: Float> {
 
 impl<T: Float> Body<T> {
     
-    const GRAVITY_VECTOR: Vector3<T> = Vector3::new(T::zero(),T::zero(),T::from(physical_constants::STANDARD_ACCELERATION_OF_GRAVITY).unwrap());
-
+    
     /// Create a new instance of Body with `mass` and `inertia` in specified state 
     pub fn new(mass: T, inertia: Matrix3<T>, position: Vector3<T>, velocity: Vector3<T>, attitude: UnitQuaternion<T>, rates: Vector3<T>) -> Self {
         let statevector = StateVector::from_vec(vec![
@@ -77,7 +76,12 @@ impl<T: Float> Body<T> {
     /// 
     /// NB: Gravity is included by default
     fn get_derivative(&self, state: &StateVector<T>, forces: &Vec<Force<T>>, torques: &Vec<Torque<T>>) -> StateVector<T> {
-        let mut world_forces = Self::GRAVITY_VECTOR * self.mass;
+        let gravity_accel: Vector3<T> = Vector3::new(
+            T::zero(),
+            T::zero(),
+            T::from(physical_constants::STANDARD_ACCELERATION_OF_GRAVITY).unwrap()
+            );
+        let mut world_forces = gravity_accel * self.mass;
         let mut body_forces = Vector3::zeros();
         for force in forces {
             match force.frame {

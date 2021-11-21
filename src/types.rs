@@ -1,10 +1,10 @@
 extern crate nalgebra as na;
 
-pub type Vector3<T: Float> = na::Vector3<T>;
-pub type Matrix3<T: Float> = na::Matrix3<T>;
-pub type UnitQuaternion<T: Float> = na::UnitQuaternion<T>;
+pub type Vector3<T> = na::Vector3<T>;
+pub type Matrix3<T> = na::Matrix3<T>;
+pub type UnitQuaternion<T> = na::UnitQuaternion<T>;
 
-pub type StateVector<T: Float> = na::SVector<T,13>;
+pub type StateVector<T> = na::SVector<T,13>;
 
 pub trait Float: num_traits::Float + num_traits::FromPrimitive + na::RealField {}
 impl Float for f32 {}

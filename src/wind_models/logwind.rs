@@ -9,7 +9,6 @@ pub struct LogWind<T: Float> {
 }
 
 impl<T: Float> LogWind<T> {
-    const K: T = T::from(0.41).unwrap();
     
     pub fn new(d: T, z0: T, u_star: T, bearing: T) -> Self {
         LogWind {
@@ -23,7 +22,8 @@ impl<T: Float> LogWind<T> {
 
 impl<T: Float> WindModel<T> for LogWind<T> {
     fn get_wind(&self, position: &Vector3<T>) -> Vector3<T> {
-        let velocity = self.u_star/Self::K * <T as num_traits::Float>::ln((position.z - self.d) / self.z0);
+        let k = T::from(0.41).unwrap();
+        let velocity = self.u_star/k * <T as num_traits::Float>::ln((position.z - self.d) / self.z0);
         let bearing_rad = self.bearing.to_radians();
         Vector3::new(
             velocity * <T as num_traits::Float>::cos(bearing_rad),
