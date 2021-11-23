@@ -5,6 +5,7 @@ extern crate aerso;
 fn main() {
     
     use aerso::*;
+    use aerso::types::*;
     
     const S: f64 = 0.5;
     const AR: f64 = 5.0;

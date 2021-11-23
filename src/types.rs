@@ -1,10 +1,10 @@
 extern crate nalgebra as na;
 
 #[cfg(not(feature="single-precision"))]
-pub type DefaultFloatRepr = f64;
+pub(crate) type DefaultFloatRepr = f64;
 
 #[cfg(feature="single-precision")]
-pub type DefaultFloatRepr = f32;
+pub(crate) type DefaultFloatRepr = f32;
 
 pub type Vector3<T = DefaultFloatRepr> = na::Vector3<T>;
 pub type Matrix3<T = DefaultFloatRepr> = na::Matrix3<T>;

@@ -1,4 +1,6 @@
-use crate::{Vector3,Force,Torque,AeroBody,Frame,AirState,WindModel,DensityModel};
+use crate::{AeroBody,AirState,WindModel,DensityModel};
+use crate::types::{Vector3,Frame,Force,Torque};
+
 use crate::types::{Float,DefaultFloatRepr};
 
 /// Interface to an aerodynamic effect
@@ -33,7 +35,7 @@ impl<I: Copy, T: Float, W: WindModel<T>, D: DensityModel<T>> AffectedBody<I,T,W,
     
 }
 
-use crate::{StateView,StateVector,UnitQuaternion};
+use crate::types::{UnitQuaternion,StateVector,StateView};
 impl<T: Float, W: WindModel<T>, D: DensityModel<T>, I: Copy> StateView<T> for AffectedBody<I,T,W,D> {
     fn position(&self) -> Vector3<T> {
         self.body.position()

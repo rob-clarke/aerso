@@ -1,5 +1,5 @@
-use crate::{Vector3,WindModel};
-use crate::types::Float;
+use crate::WindModel;
+use crate::types::{Vector3,Float};
 
 pub struct LogWind<T: Float> {
     d: T,

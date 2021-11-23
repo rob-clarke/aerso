@@ -1,4 +1,6 @@
-use crate::{Vector3,Body,Force,Torque,StateView,Frame,UnitQuaternion};
+use crate::Body;
+use crate::types::{Vector3,Matrix3,UnitQuaternion,Frame,Force,Torque,StateView};
+
 use crate::types::{Float,DefaultFloatRepr};
 
 /// Trait for general wind model
@@ -122,7 +124,7 @@ impl<T: Float, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
     }
 }
 
-use crate::StateVector;
+use crate::types::StateVector;
 impl<W: WindModel<T>, D: DensityModel<T>, T: Float> StateView<T> for AeroBody<T,W,D> {
     
     fn position(&self) -> Vector3<T> {
@@ -160,7 +162,7 @@ mod test {
         let initial_attitude = UnitQuaternion::from_euler_angles(0.0,0.0,0.0);
         let initial_rates = Vector3::zeros();
         
-        Body::new( 1.0, crate::Matrix3::identity(), initial_position, initial_velocity, initial_attitude, initial_rates)
+        Body::new( 1.0, Matrix3::identity(), initial_position, initial_velocity, initial_attitude, initial_rates)
     }
 
     #[rstest]
