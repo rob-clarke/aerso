@@ -45,6 +45,7 @@ pub struct AirState<T: Float = DefaultFloatRepr> {
 }
 
 /// Represent a body with aerodynamics helpers
+#[derive(Copy,Clone)]
 pub struct AeroBody<T: Float = DefaultFloatRepr, W: WindModel<T> = ConstantWind<T>, D: DensityModel<T> = StandardDensity> {
     /// The underlying rigid body
     pub body: Body<T>,
@@ -63,7 +64,7 @@ impl<T: Float> AeroBody<T,ConstantWind<T>,StandardDensity> {
     }
 }
 
-impl<W: WindModel<T>, T: Float> AeroBody<T,W,StandardDensity> {
+impl<T: Float, W: WindModel<T>> AeroBody<T,W,StandardDensity> {
     /// Create an AeroBody with a WindModel and constant ISA standard sea-level density
     pub fn with_wind_model(body: Body<T>, wind_model: W) -> Self {
         let density_model = StandardDensity{};

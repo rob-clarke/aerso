@@ -7,6 +7,7 @@ use crate::types::{Float,DefaultFloatRepr};
 // https://par.nsf.gov/servlets/purl/10097724
 
 /// Represent a 6DoF body affected by gravity
+#[derive(Copy,Clone)]
 pub struct Body<T: Float = DefaultFloatRepr> {
     /// Mass of body (kg)
     mass: T,
