@@ -122,6 +122,11 @@ impl<T: Float, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
         self.wind_model.step(delta_t);
         self.body.step(forces, torques, delta_t);        
     }
+    
+    /// Get body acceleration in previous timestep
+    pub fn acceleration(&self) -> Vector3<T> {
+        self.body.acceleration()
+    }
 }
 
 use crate::types::StateVector;

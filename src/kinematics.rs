@@ -17,6 +17,8 @@ pub struct Body<T: Float = DefaultFloatRepr> {
     inertia_inverse: Matrix3<T>,
     /// 13-dimensional state vector
     statevector: StateVector<T>,
+    /// Acceleration of vehicle during last step
+    acceleration: Vector3<T>,
 }
 
 
@@ -53,6 +55,7 @@ impl<T: Float> Body<T> {
             inertia,
             inertia_inverse,
             statevector,
+            acceleration: Vector3::<T>::new(T::zero(),T::zero(),T::zero()),
         }
     }
     
@@ -174,7 +177,14 @@ impl<T: Float> Body<T> {
         let k3 = self.get_derivative(&(self.statevector + k2 * delta_t/T::from_f64(2.0).unwrap()), forces, torques);
         let k4 = self.get_derivative(&(self.statevector + k3 * delta_t),                           forces, torques);
         
+        // NB: k1 is a derivative so velocity -> velocity_dot -> acceleration
+        self.acceleration = k1.velocity();
         self.statevector += (k1 + k2*T::from_f64(2.0).unwrap() + k3*T::from_f64(2.0).unwrap() + k4) * delta_t/T::from_f64(6.0).unwrap();
+    }
+    
+    /// Get body acceleration in previous timestep
+    pub fn acceleration(&self) -> Vector3<T> {
+        self.acceleration
     }
     
 }

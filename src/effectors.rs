@@ -18,20 +18,25 @@ pub struct AffectedBody<I: Copy = [DefaultFloatRepr;4], T: Float = DefaultFloatR
 
 impl<I: Copy, T: Float, W: WindModel<T>, D: DensityModel<T>> AffectedBody<I,T,W,D> {
     
-   pub fn step(&mut self, delta_t: T, inputstate: I) {
-       let airstate = self.body.get_airstate();
-       let rates = self.body.rates();
-       let ft_pairs = self.effectors.iter().map(|e| e.get_effect(airstate,rates,inputstate) );
-       
-       let mut forces = Vec::<Force<T>>::with_capacity(self.effectors.len());
-       let mut torques = Vec::<Torque<T>>::with_capacity(self.effectors.len());
-       for (f,t) in ft_pairs {
-           forces.push(f);
-           torques.push(t);
-       }
-       
-       self.body.step(&forces,&torques,delta_t);
-   }
+    pub fn step(&mut self, delta_t: T, inputstate: I) {
+        let airstate = self.body.get_airstate();
+        let rates = self.body.rates();
+        let ft_pairs = self.effectors.iter().map(|e| e.get_effect(airstate,rates,inputstate) );
+        
+        let mut forces = Vec::<Force<T>>::with_capacity(self.effectors.len());
+        let mut torques = Vec::<Torque<T>>::with_capacity(self.effectors.len());
+        for (f,t) in ft_pairs {
+            forces.push(f);
+            torques.push(t);
+        }
+        
+        self.body.step(&forces,&torques,delta_t);
+    }
+   
+    /// Get body acceleration in previous timestep
+    pub fn acceleration(&self) -> Vector3<T> {
+        self.body.acceleration()
+    }
     
 }
 
