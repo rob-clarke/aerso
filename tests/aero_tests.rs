@@ -1,6 +1,7 @@
 #![warn(clippy::all)]
 
-use aerso::{AeroBody,Vector3,Matrix3,UnitQuaternion,Body,Force,StateVector,StateView};
+use aerso::{Body,AeroBody};
+use aerso::types::{Vector3,Matrix3,UnitQuaternion,Force,StateVector,StateView};
 
 use aerso::wind_models::ConstantWind;
 

@@ -1,6 +1,7 @@
 #![warn(clippy::all)]
 
-use aerso::{Vector3,Matrix3,UnitQuaternion,Body,Force,Torque,StateVector,StateView};
+use aerso::{Body};
+use aerso::types::{Vector3,Matrix3,UnitQuaternion,Force,Torque,StateVector,StateView};
 
 use approx::assert_relative_eq;
 
