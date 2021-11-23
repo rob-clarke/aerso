@@ -196,7 +196,11 @@ impl<T: Float> StateView<T> for Body<T> {
     }
     
     fn velocity_in_frame(&self, frame: Frame) -> Vector3<T> {
-        self.statevector.velocity_in_frame(frame)
+        let body_frame_velocity = self.statevector.velocity_in_frame(Frame::Body);
+        match frame {
+            Frame::Body => body_frame_velocity,
+            Frame::World => Body::get_dcm_body(&self.statevector) * body_frame_velocity,
+        }
     }
     
     fn attitude(&self) -> UnitQuaternion<T> {
