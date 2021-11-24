@@ -35,6 +35,12 @@ fn test_gravity() {
         result.1.position().z,
         suvat_result,
         max_relative = 0.00001);
+    
+    let suvat_result = physical_constants::STANDARD_ACCELERATION_OF_GRAVITY * result.0;
+    assert_relative_eq!(
+        result.1.velocity().z,
+        suvat_result,
+        max_relative = 0.00001);
 }
 
 #[test]
