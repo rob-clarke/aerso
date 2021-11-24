@@ -16,8 +16,10 @@ pub struct Body<T: Float = DefaultFloatRepr> {
     /// Inertia inverse
     inertia_inverse: Matrix3<T>,
     /// 13-dimensional state vector
+    /// 
+    /// Statevector is formed of \[position,velocity(body),attitude_quaternion(i,j,k,w),axis_rates(body)\]
     statevector: StateVector<T>,
-    /// Acceleration of vehicle during last step
+    /// Body frame acceleration of vehicle during last step
     acceleration: Vector3<T>,
 }
 
@@ -40,7 +42,8 @@ impl<T: Float> Body<T> {
     }
     
     /// Create a new instance of Body with `mass` and `inertia` in specified state
-    /// statevector is made of [position,body_velocity,attitude_quaternion,body_axis_rates]
+    /// 
+    /// statevector is made of \[position,velocity(body),attitude_quaternion(i,j,k,w),axis_rates(body)\]
     pub fn new_from_statevector(mass: T, inertia: Matrix3<T>, statevector: StateVector<T>) -> Self {
         if mass <= T::zero() {
             panic!("Mass must be >= 0.0")
@@ -60,7 +63,17 @@ impl<T: Float> Body<T> {
     }
     
     /// Construct the Direction Cosine Matrix (DCM) from the state attitude
+    /// 
     /// Transforms quantites from the world frame to the body frame
+    /// 
+    /// Note that this is not a struct method. Usage:
+    /// ```
+    /// Body::get_dcm(body.statevector())
+    /// ```
+    /// 
+    /// # Arguments
+    /// 
+    /// * `state` - The statevector to calculate the DCM for
     pub fn get_dcm(state: &StateVector<T>) -> Matrix3<T> {
         // Don't use attitude here to avoid unessecary square root call
         let q = state.fixed_rows::<4>(6);
@@ -81,17 +94,29 @@ impl<T: Float> Body<T> {
     }
     
     /// Construct the inverse DCM
+    /// 
     /// Transforms quantities from the body frame to the world frame
+    ///
+    /// Note that this is not a struct method. Usage:
+    /// ```
+    /// Body::get_dcm_body(body.statevector())
+    /// ```
+    /// 
+    /// # Arguments
+    /// 
+    /// * `state` - The statevector to calculate the DCM for
     pub fn get_dcm_body(state: &StateVector<T>) -> Matrix3<T> {
         Body::get_dcm(state).transpose()
     }
     
     /// Calculate the state derivative
-    /// state: 13-dimensional state vector to get derivative about
-    /// forces: Vector of applied forces, both world and body frame
-    /// torques: Vector of applied torques, both world and body frame
     /// 
     /// NB: Gravity is included by default
+    /// 
+    /// # Arguments
+    /// * `state` - 13-dimensional state vector to get derivative about
+    /// * `forces` - Vector of applied forces, both world and body frame
+    /// * `torques` - Vector of applied torques, both world and body frame
     fn get_derivative(&self, state: &StateVector<T>, forces: &[Force<T>], torques: &[Torque<T>]) -> StateVector<T> {
         let gravity_accel: Vector3<T> = Vector3::new(
             T::zero(),
@@ -166,11 +191,13 @@ impl<T: Float> Body<T> {
     ///
     /// Uses 4th-order Runge-Kutta integration
     /// 
-    /// forces: Vector of applied forces, both world and body frame
-    /// torques: Vector of applied torques, both world and body frame
-    /// deltaT: Timestep (s)
-    ///
     /// NB: Gravity is included by default
+    ///
+    /// # Arguments
+    /// 
+    /// * `forces` - Vector of applied forces, both world and body frame
+    /// * `torques` - Vector of applied torques, both world and body frame
+    /// * `delta_t` - Timestep (s)
     pub fn step(&mut self, forces: &[Force<T>], torques: &[Torque<T>], delta_t: T) {
         let k1 = self.get_derivative( &self.statevector,                                           forces, torques);
         let k2 = self.get_derivative(&(self.statevector + k1 * delta_t/T::from_f64(2.0).unwrap()), forces, torques);
@@ -182,7 +209,15 @@ impl<T: Float> Body<T> {
         self.statevector += (k1 + k2*T::from_f64(2.0).unwrap() + k3*T::from_f64(2.0).unwrap() + k4) * delta_t/T::from_f64(6.0).unwrap();
     }
     
-    /// Get body acceleration in previous timestep
+    /// Get body-frame acceleration at the start of the previous timestep
+    /// 
+    /// The resultant acceleration is in body frame and is the coordinate acceleration.
+    /// To turn this into proper acceleration as seen by an accelerometer, the acceleration of the
+    /// frame needs to be added, in this case standard gravity:
+    /// ```
+    /// let acc_frame = Body::get_dcm(&body.statevector()) * Vector3::new(0.0,0.0,-9.81);
+    /// let acc_proper = body.acceleration() + acc_frame;
+    /// ```
     pub fn acceleration(&self) -> Vector3<T> {
         self.acceleration
     }

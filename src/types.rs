@@ -1,17 +1,30 @@
 extern crate nalgebra as na;
 
 #[cfg(not(feature="single-precision"))]
+/// Default float representation used in the library
+/// 
+/// Used when "single-precision" feature is not enabled
 pub(crate) type DefaultFloatRepr = f64;
 
 #[cfg(feature="single-precision")]
+/// Default float representation used in the library
+/// 
+/// Used when "single-precision" feature is enabled
 pub(crate) type DefaultFloatRepr = f32;
 
+/// Alias for 3D vector representation
 pub type Vector3<T = DefaultFloatRepr> = na::Vector3<T>;
+
+/// Alias for 3x3 matrix representation
 pub type Matrix3<T = DefaultFloatRepr> = na::Matrix3<T>;
+
+/// Alias for unit quaternion representation
 pub type UnitQuaternion<T = DefaultFloatRepr> = na::UnitQuaternion<T>;
 
+/// Alias for 13-dimensional state vector representation
 pub type StateVector<T = DefaultFloatRepr> = na::SVector<T,13>;
 
+/// Trait to cover both single (`f32`) and double (`f64`) precision generic types
 pub trait Float: num_traits::Float + num_traits::FromPrimitive + na::RealField {}
 impl Float for f32 {}
 impl Float for f64 {}
@@ -19,18 +32,23 @@ impl Float for f64 {}
 /// Represent reference frame of quantities
 #[derive(Copy,Clone)]
 pub enum Frame {
+    /// Associated quantity is in world frame
     World,
+    /// Associated quantity is in body frame
     Body
 }
 
 /// Represent a force in either body or world reference frame
 #[derive(Copy,Clone)]
 pub struct Force<T: Float = DefaultFloatRepr> {
+    /// Vector representing the force
     pub force: Vector3<T>,
+    /// Frame of the vector
     pub frame: Frame,
 }
 
 impl<T: Float> Force<T> {
+    /// Create new force with components `x`,`y`,`z`, in `frame`
     fn new(x: T, y: T, z: T, frame: Frame) -> Self {
         Force {
             force: Vector3::new(x,y,z),
@@ -38,12 +56,12 @@ impl<T: Float> Force<T> {
         }
     }
     
-    /// Create a world-referenced force
+    /// Create a world-referenced force with components `x`,`y`,`z`
     pub fn world(x: T, y: T, z: T) -> Self {
         Force::new(x,y,z,Frame::World)
     }
     
-    /// Create a body-referenced force
+    /// Create a body-referenced force with components `x`,`y`,`z`
     pub fn body(x: T,y: T, z: T) -> Self {
         Force::new(x,y,z,Frame::Body)
     }
@@ -52,11 +70,14 @@ impl<T: Float> Force<T> {
 /// Represent a torque in either body or world reference frame
 #[derive(Copy,Clone)]
 pub struct Torque<T: Float = DefaultFloatRepr> {
+    /// Vector representing the torque
     pub torque: Vector3<T>,
+    /// Frame of the torque
     pub frame: Frame,
 }
 
 impl<T: Float> Torque<T> {
+    /// Create new torque with components `x`,`y`,`z`, in `frame`
     fn new(x: T, y: T, z: T, frame: Frame) -> Self {
         Torque {
             torque: Vector3::new(x,y,z),

@@ -1,11 +1,17 @@
 use crate::WindModel;
 use crate::types::{Vector3,Float};
 
+/// Built-in [WindModel] to represent a constant wind
 pub struct ConstantWind<T: Float> {
     wind: Vector3<T>,
 }
 
 impl<T: Float> ConstantWind<T> {
+    /// Create a new ConstantWind model with `wind`
+    /// 
+    /// # Arguments
+    /// 
+    /// * `wind` - The wind direction vector (N,E,D)
     pub fn new(wind: Vector3<T>) -> Self {
         ConstantWind {
             wind,

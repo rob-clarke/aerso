@@ -23,6 +23,9 @@ pub trait DensityModel<T: Float = DefaultFloatRepr> {
 
 }
 
+/// Built-in [DensityModel] for ISA standard density at sea level
+/// 
+/// This model does not vary density with altitude.
 pub struct StandardDensity;
 impl StandardDensity {
     const ISA_STANDARD_DENSITY: f64 = 1.225;
@@ -40,13 +43,13 @@ pub struct AirState<T: Float = DefaultFloatRepr> {
     pub alpha: T,
     /// Angle of sideslip (radians)
     pub beta: T,
-    /// Airspeed (m.s^-1)
+    /// Airspeed (m·s<sup>-1</sup>) 
     pub airspeed: T,
-    /// Dynamic pressure (Pa) (kg.m^-1.s^2)
+    /// Dynamic pressure (Pa) (kg·m<sup>-1</sup>·s<sup>2</sup>)
     pub q: T,
 }
 
-/// Represent a body with aerodynamics helpers
+/// Represent a body in an atmosphere
 #[derive(Copy,Clone)]
 pub struct AeroBody<T: Float = DefaultFloatRepr, W: WindModel<T> = ConstantWind<T>, D: DensityModel<T> = StandardDensity> {
     /// The underlying rigid body
@@ -59,7 +62,11 @@ pub struct AeroBody<T: Float = DefaultFloatRepr, W: WindModel<T> = ConstantWind<
 
 use crate::wind_models::ConstantWind;
 impl<T: Float> AeroBody<T,ConstantWind<T>,StandardDensity> {
-    /// Create an AeroBody with no wind and constant ISA standard sea-level density
+    /// Create an [AeroBody] with no wind and constant ISA standard sea-level density
+    /// 
+    /// # Arguments
+    /// 
+    /// * `body` - The kinematics body to use
     pub fn new(body: Body<T>) -> Self {
         let wind_model = crate::wind_models::ConstantWind::<T>::new(Vector3::new(T::zero(),T::zero(),T::zero()));
         Self::with_wind_model(body,wind_model)
@@ -67,7 +74,12 @@ impl<T: Float> AeroBody<T,ConstantWind<T>,StandardDensity> {
 }
 
 impl<T: Float, W: WindModel<T>> AeroBody<T,W,StandardDensity> {
-    /// Create an AeroBody with a WindModel and constant ISA standard sea-level density
+    /// Create an AeroBody with a [WindModel] and constant ISA standard sea-level density
+    /// 
+    /// # Arguments
+    /// 
+    /// * `body` - The kinematics body to use
+    /// * `wind_model` - The [WindModel] to use
     pub fn with_wind_model(body: Body<T>, wind_model: W) -> Self {
         let density_model = StandardDensity{};
         Self::with_density_model(body,wind_model,density_model)
@@ -75,7 +87,13 @@ impl<T: Float, W: WindModel<T>> AeroBody<T,W,StandardDensity> {
 }
 
 impl<T: Float, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
-    /// Create an AeroBody with a WindModel and a DensityModel
+    /// Create an AeroBody with a [WindModel] and a [DensityModel]
+    ///
+    /// # Arguments
+    /// 
+    /// * `body` - The kinematics body to use
+    /// * `wind_model` - The [WindModel] to use
+    /// * `density_model` - The [DensityModel] to use
     pub fn with_density_model(body: Body<T>, wind_model: W, density_model: D) -> Self {
         Self {
             body,
@@ -84,8 +102,11 @@ impl<T: Float, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
         }
     }
     
-    /// Return the current airstate for the rigid body
-    /// This includes the angles of attack (`alpha`) and sideslip (`beta`), the `airspeed` and the dynamic pressure, (`q`)
+    /// Return an [AirState] representing the current aerodynamic state of the body
+    /// 
+    /// The [AirState] includes the angles of attack (`alpha`) and sideslip (`beta`), the `airspeed` and the dynamic pressure, (`q`).
+    /// 
+    /// It is calculated using the supplied wind and density models.
     pub fn get_airstate(&self) -> AirState<T> {
         
         let current_world_wind = self.wind_model.get_wind(&self.body.position());
@@ -116,14 +137,17 @@ impl<T: Float, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
         }
     }
     
-    /// Propagate the body state and wind_model by delta_t under the supplied forces and torques
-    /// See the documentation for Body::step for further details
+    /// Propagate the body state and wind_model by `delta_t` under the supplied `forces` and `torques`
+    /// 
+    /// See the documentation for [Body::step] for further details
     pub fn step(&mut self, forces: &[Force<T>], torques: &[Torque<T>], delta_t: T) {
         self.wind_model.step(delta_t);
         self.body.step(forces, torques, delta_t);        
     }
     
-    /// Get body acceleration in previous timestep
+    /// Get body-frame acceleration at the start of the previous timestep
+    /// 
+    /// See [Body::acceleration] for more details
     pub fn acceleration(&self) -> Vector3<T> {
         self.body.acceleration()
     }

@@ -1,6 +1,7 @@
 use crate::WindModel;
 use crate::types::{Vector3,Float};
 
+/// Built-in [WindModel] to represent a [wind profile power law](https://en.wikipedia.org/wiki/Wind_profile_power_law)
 pub struct PowerWind<T: Float> {
     u_r: T,
     z_r: T,
@@ -9,11 +10,27 @@ pub struct PowerWind<T: Float> {
 }
 
 impl<T: Float> PowerWind<T> {
-    
+    /// Create a new [PowerWind] model with specified parameters
+    /// 
+    /// # Arguments
+    /// 
+    /// * `u_r` - Reference wind speed (m·s<sup>-1</sup>) 
+    /// * `z_r` - Reference wind height (m)
+    /// * `bearing` - The bearing for the calculated wind vector (deg)
+    /// * `alpha` - Power law exponent
     pub fn new_with_alpha(u_r: T, z_r: T, bearing: T, alpha: T) -> Self {
         PowerWind { u_r, z_r, bearing, alpha }
     }
     
+    /// Create a new [PowerWind] model with specoified parameters and typical alpha
+    /// 
+    /// The alpha parameter will be set to `0.143`
+    /// 
+    /// # Arguments
+    /// 
+    /// * `u_r` - Reference wind speed (m·s<sup>-1</sup>) 
+    /// * `z_r` - Reference wind height (m)
+    /// * `bearing` - The bearing for the calculated wind vector (deg)
     pub fn new(u_r: T, z_r: T, bearing: T) -> Self {
         let alpha_typical = T::from(0.143).unwrap();
         PowerWind::new_with_alpha(u_r, z_r, bearing, alpha_typical)

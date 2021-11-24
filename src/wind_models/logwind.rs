@@ -1,6 +1,7 @@
 use crate::WindModel;
 use crate::types::{Vector3,Float};
 
+/// Built-in [WindModel] to represent a [log wind profile](https://en.wikipedia.org/wiki/Log_wind_profile)
 pub struct LogWind<T: Float> {
     d: T,
     z0: T,
@@ -9,7 +10,14 @@ pub struct LogWind<T: Float> {
 }
 
 impl<T: Float> LogWind<T> {
-    
+    /// Create a new LogWind with specified parameters
+    /// 
+    /// # Arguments
+    /// 
+    /// * `d` - Zero plane displacement (m)
+    /// * `z0` - Surface roughness (m)
+    /// * `u_star` - Friction velocity (m·s<sup>-1</sup>)
+    /// * `bearing` - The bearing for the calculated wind vector (deg)
     pub fn new(d: T, z0: T, u_star: T, bearing: T) -> Self {
         LogWind {
             d,
