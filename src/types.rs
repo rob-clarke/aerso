@@ -61,10 +61,21 @@ impl<T: Float> Force<T> {
         Force::new(x,y,z,Frame::World)
     }
     
+    /// Create a world-referenced force with vec
+    pub fn world_vec(vec: Vector3<T>) -> Self {
+        Force::world(vec[0],vec[1],vec[1])
+    }
+    
     /// Create a body-referenced force with components `x`,`y`,`z`
     pub fn body(x: T,y: T, z: T) -> Self {
         Force::new(x,y,z,Frame::Body)
     }
+    
+    /// Create a body-referenced force with vec
+    pub fn body_vec(vec: Vector3<T>) -> Self {
+        Force::body(vec[0],vec[1],vec[1])
+    }
+    
 }
 
 /// Represent a torque in either body or world reference frame
@@ -90,9 +101,19 @@ impl<T: Float> Torque<T> {
         Torque::new(x,y,z,Frame::World)
     }
     
+    /// Create a world-referenced torque with vec
+    pub fn world_vec(vec: Vector3<T>) -> Self {
+        Torque::world(vec[0],vec[1],vec[1])
+    }
+    
     /// Create a body-referenced force
     pub fn body(x: T,y: T, z: T) -> Self {
         Torque::new(x,y,z,Frame::Body)
+    }
+    
+    /// Create a body-referenced torque with vec
+    pub fn body_vec(vec: Vector3<T>) -> Self {
+        Torque::body(vec[0],vec[1],vec[1])
     }
 }
 
