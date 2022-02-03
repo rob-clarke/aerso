@@ -68,7 +68,10 @@ impl<T: Float> Body<T> {
     /// 
     /// Note that this is not a struct method. Usage:
     /// ```
-    /// Body::get_dcm(body.statevector())
+    /// # use aerso::Body;
+    /// # use aerso::types::{Matrix3,Vector3,StateView};
+    /// # let body = Body::new_at_origin(1.0,Matrix3::identity());
+    /// let dcm = Body::get_dcm(&body.statevector());
     /// ```
     /// 
     /// # Arguments
@@ -99,7 +102,10 @@ impl<T: Float> Body<T> {
     ///
     /// Note that this is not a struct method. Usage:
     /// ```
-    /// Body::get_dcm_body(body.statevector())
+    /// # use aerso::Body;
+    /// # use aerso::types::{Matrix3,Vector3,StateView};
+    /// # let body = Body::new_at_origin(1.0,Matrix3::identity());
+    /// let dcm_body = Body::get_dcm_body(&body.statevector());
     /// ```
     /// 
     /// # Arguments
@@ -215,6 +221,9 @@ impl<T: Float> Body<T> {
     /// To turn this into proper acceleration as seen by an accelerometer, the acceleration of the
     /// frame needs to be added, in this case standard gravity:
     /// ```
+    /// # use aerso::Body;
+    /// # use aerso::types::{Matrix3,Vector3,StateView};
+    /// # let body = Body::new_at_origin(1.0,Matrix3::identity());
     /// let acc_frame = Body::get_dcm(&body.statevector()) * Vector3::new(0.0,0.0,-9.81);
     /// let acc_proper = body.acceleration() + acc_frame;
     /// ```
