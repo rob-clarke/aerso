@@ -60,6 +60,15 @@ impl<I, T: Float, W: WindModel<T>, D: DensityModel<T>> AffectedBody<I,T,W,D> {
         self.body.acceleration()
     }
     
+    /// Set the statevector for the underlying [AeroBody]
+    /// 
+    /// This in turn sets the statevector for the underlying [Body]
+    /// 
+    /// The statevector is in the order: \[position,velocity(body),attitude_quaternion(i,j,k,w),axis_rates(body)\]
+    pub fn set_state(&mut self, new_state: StateVector<T>) {
+        self.body.set_state(new_state);
+    }
+    
     /// Return the current airstate for the rigid body
     /// See documentation for [AeroBody::get_airstate]
     pub fn get_airstate(&self) -> AirState<T> {

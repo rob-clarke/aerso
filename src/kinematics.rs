@@ -231,6 +231,16 @@ impl<T: Float> Body<T> {
         self.acceleration
     }
     
+    /// Set the body statevector
+    /// 
+    /// Will also reset the body acceleration to zero
+    /// 
+    /// The statevector is in the order: \[position,velocity(body),attitude_quaternion(i,j,k,w),axis_rates(body)\]
+    pub fn set_state(&mut self, new_state: StateVector<T>) {
+        self.statevector = new_state;
+        self.acceleration = Vector3::zeros();
+    }
+    
 }
 
 /// Add state vector helpers to the Body struct

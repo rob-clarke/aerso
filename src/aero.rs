@@ -151,6 +151,13 @@ impl<T: Float, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
     pub fn acceleration(&self) -> Vector3<T> {
         self.body.acceleration()
     }
+    
+    /// Set the statevector for the underlying [Body]
+    /// 
+    /// The statevector is in the order: \[position,velocity(body),attitude_quaternion(i,j,k,w),axis_rates(body)\]
+    pub fn set_state(&mut self, new_state: StateVector<T>) {
+        self.body.set_state(new_state);
+    }
 }
 
 use crate::types::StateVector;
