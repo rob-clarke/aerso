@@ -173,12 +173,12 @@ impl<T: Float> Body<T> {
         #[cfg(feature="constrain-qnorm-drift")]
         let attitude_dot = {
             // Use Eq. (23) from the paper to set the free parameter to constrain the drift of the quaternion norm
-            let qnorm = <T as num_traits::Float>::powi(q[0],2) + 
+            let qnorm_sqd = <T as num_traits::Float>::powi(q[0],2) + 
                         <T as num_traits::Float>::powi(q[1],2) +
                         <T as num_traits::Float>::powi(q[2],2) +
                         <T as num_traits::Float>::powi(q[3],2);
             let k = T::from_f64(0.001).unwrap();
-            let c = k * (T::one() - qnorm);
+            let c = k * (T::one() - qnorm_sqd);
             qdot_matrix * q * T::from(0.5).unwrap() + q * c
             };
         

@@ -23,16 +23,65 @@ pub trait DensityModel<T: Float = DefaultFloatRepr> {
 
 }
 
-/// Built-in [DensityModel] for ISA standard density at sea level
+/// Built-in [DensityModel] for constant ISA standard sea level density
 /// 
 /// This model does not vary density with altitude.
-pub struct StandardDensity;
-impl StandardDensity {
+pub struct ConstantDensity;
+impl ConstantDensity {
     const ISA_STANDARD_DENSITY: f64 = 1.225;
 }
-impl<T: Float> DensityModel<T> for StandardDensity {
+impl<T: Float> DensityModel<T> for ConstantDensity {
     fn get_density(&self, _position: &Vector3<T>) -> T {
         T::from(Self::ISA_STANDARD_DENSITY).unwrap()
+    }
+}
+
+/// Built-in [DensityModel] for ISA standard density model
+/// 
+/// This model is valid up to 11km altitude
+/// 
+/// http://www-mdp.eng.cam.ac.uk/web/library/enginfo/aerothermal_dvd_only/aero/atmos/atmos.html
+pub struct StandardDensity;
+impl StandardDensity {
+    const T_LR: f64 = 0.0065; // K/m
+    const R: f64    = 287.0;  // m^2/s^2/K
+    
+    const ISA_SL_T: f64  = 288.15; // K
+    const ISA_11K_T: f64 = 216.65; // K
+    
+    const ISA_SL_H: f64  =      0.0; // m
+    const ISA_11K_H: f64 = 11_000.0; // m
+    
+    const ISA_SL_P: f64 = 101_325.0; // Pa
+    
+}
+impl StandardDensity {
+    fn interp<T: Float>(x: T, x_0: T, x_1: T, y_0: T, y_1: T) -> T {
+        y_0 + (x-x_0)/(x_1-x_0)*(y_1-y_0)
+    }
+    fn get_standard_temperature<T: Float>(altitude: T) -> T {
+        Self::interp(
+            altitude,
+            T::from(Self::ISA_SL_H).unwrap(), T::from(Self::ISA_11K_H).unwrap(),
+            T::from(Self::ISA_SL_T).unwrap(), T::from(Self::ISA_11K_T).unwrap()
+        )
+    }
+    fn get_standard_pressure<T: Float>(altitude: T) -> T {
+        let t_0 = T::from(Self::ISA_SL_T).unwrap();
+        let p_0 = T::from(Self::ISA_SL_P).unwrap();
+        let t_a = Self::get_standard_temperature(altitude);
+        let lr = T::from(Self::T_LR).unwrap();
+        let r_dry = T::from(Self::R).unwrap();
+        let g = T::from(physical_constants::STANDARD_ACCELERATION_OF_GRAVITY).unwrap();
+        
+        p_0 * num_traits::Float::powf( t_a/t_0, g/(lr*r_dry) )
+    }
+}
+impl<T: Float> DensityModel<T> for StandardDensity {
+    fn get_density(&self, position: &Vector3<T>) -> T {
+        let altitude = -position[2];
+        let r_dry = T::from(Self::R).unwrap();
+        Self::get_standard_pressure(altitude) / (r_dry * Self::get_standard_temperature(altitude))
     }
 }
 
@@ -229,7 +278,7 @@ mod test {
         let airstate = vehicle.get_airstate();
         
         assert_relative_eq!(airstate.airspeed,1.0);
-        assert_relative_eq!(airstate.q,0.5*StandardDensity::ISA_STANDARD_DENSITY);
+        assert_relative_eq!(airstate.q,0.5*ConstantDensity::ISA_STANDARD_DENSITY);
         assert_relative_eq!(airstate.alpha,0.0);
         assert_relative_eq!(airstate.beta,0.0);
     }
@@ -245,7 +294,7 @@ mod test {
         let airstate = vehicle.get_airstate();
         
         assert_relative_eq!(airstate.airspeed,20.0);
-        assert_relative_eq!(airstate.q,0.5*StandardDensity::ISA_STANDARD_DENSITY*400.0);
+        assert_relative_eq!(airstate.q,0.5*ConstantDensity::ISA_STANDARD_DENSITY*400.0);
         assert_relative_eq!(airstate.alpha,0.0);
         assert_relative_eq!(airstate.beta,0.0);
     }
@@ -261,7 +310,7 @@ mod test {
         let airstate = vehicle.get_airstate();
         
         assert_relative_eq!(airstate.airspeed,1.0);
-        assert_relative_eq!(airstate.q,0.5*StandardDensity::ISA_STANDARD_DENSITY);
+        assert_relative_eq!(airstate.q,0.5*ConstantDensity::ISA_STANDARD_DENSITY);
         assert_relative_eq!(airstate.alpha,180.0f64.to_radians());
         assert_relative_eq!(airstate.beta,0.0);
     }
@@ -277,7 +326,7 @@ mod test {
         let airstate = vehicle.get_airstate();
         
         assert_relative_eq!(airstate.airspeed,1.0);
-        assert_relative_eq!(airstate.q,0.5*StandardDensity::ISA_STANDARD_DENSITY);
+        assert_relative_eq!(airstate.q,0.5*ConstantDensity::ISA_STANDARD_DENSITY);
         assert_relative_eq!(airstate.alpha,90.0f64.to_radians());
         assert_relative_eq!(airstate.beta,0.0);
     }
@@ -293,7 +342,7 @@ mod test {
         let airstate = vehicle.get_airstate();
         
         assert_relative_eq!(airstate.airspeed,1.0);
-        assert_relative_eq!(airstate.q,0.5*StandardDensity::ISA_STANDARD_DENSITY);
+        assert_relative_eq!(airstate.q,0.5*ConstantDensity::ISA_STANDARD_DENSITY);
         assert_relative_eq!(airstate.alpha,0.0);
         assert_relative_eq!(airstate.beta,90.0f64.to_radians());
     }
@@ -309,7 +358,7 @@ mod test {
         let airstate = vehicle.get_airstate();
         
         assert_relative_eq!(airstate.airspeed,2.0f64.sqrt());
-        assert_relative_eq!(airstate.q,0.5*StandardDensity::ISA_STANDARD_DENSITY*2.0);
+        assert_relative_eq!(airstate.q,0.5*ConstantDensity::ISA_STANDARD_DENSITY*2.0);
         assert_relative_eq!(airstate.alpha,0.0);
         assert_relative_eq!(airstate.beta,-45.0f64.to_radians());
     }

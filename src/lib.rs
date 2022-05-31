@@ -13,5 +13,6 @@ pub use effectors::{AeroEffect,AffectedBody};
 
 pub mod wind_models;
 pub mod density_models {
+    pub use crate::aero::ConstantDensity;
     pub use crate::aero::StandardDensity;
 }
