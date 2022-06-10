@@ -96,7 +96,7 @@ impl<T: Float> Torque<T> {
         }
     }
     
-    /// Create a world-referenced torque
+    /// Create a world-referenced torque with components `x`,`y`,`z`
     pub fn world(x: T,y: T, z: T) -> Self {
         Torque::new(x,y,z,Frame::World)
     }
@@ -106,7 +106,7 @@ impl<T: Float> Torque<T> {
         Torque::world(vec[0],vec[1],vec[2])
     }
     
-    /// Create a body-referenced force
+    /// Create a body-referenced torque with components `x`,`y`,`z`
     pub fn body(x: T,y: T, z: T) -> Self {
         Torque::new(x,y,z,Frame::Body)
     }
