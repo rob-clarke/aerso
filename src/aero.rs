@@ -190,8 +190,8 @@ impl<T: Float, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
     /// 
     /// See the documentation for [Body::step] for further details
     pub fn step(&mut self, forces: &[Force<T>], torques: &[Torque<T>], delta_t: T) {
-        self.wind_model.step(delta_t);
         self.body.step(forces, torques, delta_t);        
+        self.wind_model.step(delta_t);
     }
     
     /// Get body-frame acceleration at the start of the previous timestep
