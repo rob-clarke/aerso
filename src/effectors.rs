@@ -30,6 +30,28 @@ pub struct AffectedBody<I = Vec<DefaultFloatRepr>, T: Float = DefaultFloatRepr, 
 }
 
 impl<I, T: Float, W: WindModel<T>, D: DensityModel<T>> AffectedBody<I,T,W,D> {
+    /// Calculate the state derivative
+    /// 
+    /// NB: Gravity is included by default
+    /// 
+    /// # Arguments
+    /// * `state` - 13-dimensional state vector to get derivative about
+    /// * `inputstate` - The input state to pass to the suplied [AeroEffect]s
+    pub fn get_derivative(&self, state: &StateVector<T>, inputstate: &I) -> StateVector<T> {
+        let airstate = self.body.get_airstate();
+        let rates = self.body.rates();
+        let ft_pairs = self.effectors.iter().map(|e| e.get_effect(airstate,rates,inputstate) );
+        
+        let mut forces = Vec::<Force<T>>::with_capacity(self.effectors.len());
+        let mut torques = Vec::<Torque<T>>::with_capacity(self.effectors.len());
+        for (f,t) in ft_pairs {
+            forces.push(f);
+            torques.push(t);
+        }
+        
+        self.body.get_derivative(state, &forces, &torques)
+    }
+    
     /// Propagate the system state by delta_t with `inputstate`
     /// 
     /// NB: Forces and Torques are calculated at the beginning of the timestep and are not recalculated

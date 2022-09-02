@@ -123,7 +123,7 @@ impl<T: Float> Body<T> {
     /// * `state` - 13-dimensional state vector to get derivative about
     /// * `forces` - Vector of applied forces, both world and body frame
     /// * `torques` - Vector of applied torques, both world and body frame
-    fn get_derivative(&self, state: &StateVector<T>, forces: &[Force<T>], torques: &[Torque<T>]) -> StateVector<T> {
+    pub fn get_derivative(&self, state: &StateVector<T>, forces: &[Force<T>], torques: &[Torque<T>]) -> StateVector<T> {
         let gravity_accel: Vector3<T> = Vector3::new(
             T::zero(),
             T::zero(),
@@ -393,4 +393,64 @@ mod test {
 
     }
 
+    #[test]
+    fn test_torque() {
+        let inertia = Matrix3::identity();
+        let state = StateVector::from_vec(vec![
+            0.0, 0.0, 0.0,
+            1.0, 2.0, 3.0,
+            0.0, 0.0, 0.0, 1.0,
+            0.0, 0.0, 0.0
+            ]);
+        let mut body = Body::new_from_statevector(1.0, inertia, state);
+        
+        let torque = Torque::body(1.0, 0.0, 0.0);
+        
+        let derivative = body.get_derivative(&state,&[],&[torque]);
+        assert_relative_eq!(derivative[0],1.0);
+        assert_relative_eq!(derivative[1],2.0);
+        assert_relative_eq!(derivative[2],3.0);
+        
+        assert_relative_eq!(derivative[3],0.0);
+        assert_relative_eq!(derivative[4],0.0);
+        assert_relative_eq!(derivative[5],physical_constants::STANDARD_ACCELERATION_OF_GRAVITY);
+
+        assert_relative_eq!(derivative[6],0.0);
+        assert_relative_eq!(derivative[7],0.0);
+        assert_relative_eq!(derivative[8],0.0);
+        assert_relative_eq!(derivative[9],0.0);
+
+        // assert_relative_eq!(derivative[10],1.0);
+        assert_relative_eq!(derivative[11],0.0);
+        assert_relative_eq!(derivative[12],0.0);
+        
+        let dt = 0.1;
+        body.step(&[], &[torque], dt);
+        
+        let state = body.statevector();
+        assert_relative_eq!(state[0],1.0*0.1,max_relative = 0.00001);
+        assert_relative_eq!(state[1],2.0*0.1,max_relative = 0.00001);
+        assert_relative_eq!(
+            state[2],
+            3.0*0.1 + 0.5*dt.powi(2)*physical_constants::STANDARD_ACCELERATION_OF_GRAVITY,
+            max_relative = 0.00001);
+        
+        // assert_relative_eq!(state[3],1.0,max_relative = 0.00001);
+        // assert_relative_eq!(state[4],2.0,max_relative = 0.00001);
+        // assert_relative_eq!(
+        //     state[5],
+        //     3.0 + dt*physical_constants::STANDARD_ACCELERATION_OF_GRAVITY,
+        //     max_relative = 0.00001);
+
+        assert_relative_eq!(state[6],0.00249999,max_relative = 0.00001);
+        assert_relative_eq!(state[7],0.0);
+        assert_relative_eq!(state[8],0.0);
+        assert_relative_eq!(state[9],0.99999,max_relative = 0.00001);
+
+        assert_relative_eq!(state[10],0.1,max_relative = 0.00001);
+        assert_relative_eq!(state[11],0.0,max_relative = 0.00001);
+        assert_relative_eq!(state[12],0.0,max_relative = 0.00001);
+
+    }
+    
 }

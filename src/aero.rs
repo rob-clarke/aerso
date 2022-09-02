@@ -186,6 +186,18 @@ impl<T: Float, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
         }
     }
     
+    /// Calculate the state derivative
+    /// 
+    /// NB: Gravity is included by default
+    /// 
+    /// # Arguments
+    /// * `state` - 13-dimensional state vector to get derivative about
+    /// * `forces` - Vector of applied forces, both world and body frame
+    /// * `torques` - Vector of applied torques, both world and body frame
+    pub fn get_derivative(&self, state: &StateVector<T>, forces: &[Force<T>], torques: &[Torque<T>]) -> StateVector<T> {
+        self.body.get_derivative(state, forces, torques)
+    }
+    
     /// Propagate the body state and wind_model by `delta_t` under the supplied `forces` and `torques`
     /// 
     /// See the documentation for [Body::step] for further details
