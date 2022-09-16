@@ -151,16 +151,18 @@ impl<T: Float, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
         }
     }
     
-    /// Return an [AirState] representing the current aerodynamic state of the body
+    /// Return an [AirState] representing the equivalent aerodynamic state for `state`
     /// 
     /// The [AirState] includes the angles of attack (`alpha`) and sideslip (`beta`), the `airspeed` and the dynamic pressure, (`q`).
     /// 
     /// It is calculated using the supplied wind and density models.
-    pub fn get_airstate(&self) -> AirState<T> {
-        
-        let current_world_wind = self.wind_model.get_wind(&self.body.position());
-        
-        let current_body_wind = self.body.velocity() - Body::get_dcm(&self.body.statevector()) * current_world_wind;
+    /// 
+    /// # Arguments
+    /// 
+    /// * `state` - The state to use to calculate the airstate
+    pub fn get_airstate_from_state(&self, state: &StateVector<T>) -> AirState<T> {
+        let current_world_wind = self.wind_model.get_wind(&state.position());
+        let current_body_wind = state.velocity() - Body::get_dcm(state) * current_world_wind;
         
         let u = current_body_wind[0];
         let v = current_body_wind[1];
@@ -176,7 +178,7 @@ impl<T: Float, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
         
         let beta = if airspeed != T::zero() { <T as num_traits::Float>::asin( v / airspeed ) } else { T::zero() };
         
-        let q = T::from(0.5).unwrap() * self.density_model.get_density(&self.body.position()) * <T as num_traits::Float>::powi(airspeed,2);
+        let q = T::from(0.5).unwrap() * self.density_model.get_density(&state.position()) * <T as num_traits::Float>::powi(airspeed,2);
         
         AirState {
             alpha,
@@ -184,6 +186,15 @@ impl<T: Float, W: WindModel<T>, D: DensityModel<T>> AeroBody<T,W,D> {
             airspeed,
             q,
         }
+    }
+    
+    /// Return an [AirState] representing the current aerodynamic state of the body
+    /// 
+    /// The [AirState] includes the angles of attack (`alpha`) and sideslip (`beta`), the `airspeed` and the dynamic pressure, (`q`).
+    /// 
+    /// It is calculated using the supplied wind and density models.
+    pub fn get_airstate(&self) -> AirState<T> {
+        self.get_airstate_from_state(&self.statevector())
     }
     
     /// Calculate the state derivative

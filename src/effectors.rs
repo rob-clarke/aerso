@@ -38,8 +38,8 @@ impl<I, T: Float, W: WindModel<T>, D: DensityModel<T>> AffectedBody<I,T,W,D> {
     /// * `state` - 13-dimensional state vector to get derivative about
     /// * `inputstate` - The input state to pass to the suplied [AeroEffect]s
     pub fn get_derivative(&self, state: &StateVector<T>, inputstate: &I) -> StateVector<T> {
-        let airstate = self.body.get_airstate();
-        let rates = self.body.rates();
+        let airstate = self.body.get_airstate_from_state(state);
+        let rates = state.rates();
         let ft_pairs = self.effectors.iter().map(|e| e.get_effect(airstate,rates,inputstate) );
         
         let mut forces = Vec::<Force<T>>::with_capacity(self.effectors.len());
