@@ -78,7 +78,7 @@ impl<T: Float> Body<T> {
     /// 
     /// * `state` - The statevector to calculate the DCM for
     pub fn get_dcm(state: &StateVector<T>) -> Matrix3<T> {
-        // Don't use attitude here to avoid unessecary square root call
+        // Don't use attitude here to avoid unnecessary square root call
         let q = state.fixed_rows::<4>(6);
         let q0 = q[3]; let q02 = <T as num_traits::Float>::powi(q0,2); // Real part (w)
         let q1 = q[0]; let q12 = <T as num_traits::Float>::powi(q1,2); // i
