@@ -110,7 +110,7 @@ pub struct AeroBody<T: Float = DefaultFloatRepr, W: WindModel<T> = ConstantWind<
 }
 
 use crate::wind_models::ConstantWind;
-impl<T: Float> AeroBody<T,ConstantWind<T>,StandardDensity> {
+impl<T: Float> AeroBody<T,ConstantWind<T>,ConstantDensity> {
     /// Create an [AeroBody] with no wind and constant ISA standard sea-level density
     /// 
     /// # Arguments
@@ -122,7 +122,7 @@ impl<T: Float> AeroBody<T,ConstantWind<T>,StandardDensity> {
     }
 }
 
-impl<T: Float, W: WindModel<T>> AeroBody<T,W,StandardDensity> {
+impl<T: Float, W: WindModel<T>> AeroBody<T,W,ConstantDensity> {
     /// Create an AeroBody with a [WindModel] and constant ISA standard sea-level density
     /// 
     /// # Arguments
@@ -130,7 +130,7 @@ impl<T: Float, W: WindModel<T>> AeroBody<T,W,StandardDensity> {
     /// * `body` - The kinematics body to use
     /// * `wind_model` - The [WindModel] to use
     pub fn with_wind_model(body: Body<T>, wind_model: W) -> Self {
-        let density_model = StandardDensity{};
+        let density_model = ConstantDensity{};
         Self::with_density_model(body,wind_model,density_model)
     }
 }
